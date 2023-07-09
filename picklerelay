@@ -1,5 +1,10 @@
 #!/bin/bash
 #relay a pickle request to (eventually) oregano
+# N. B. This is a copy of the file, which is actually kept in 
+# svn. I have a whole bunch of machinery for distributing and keeping 
+# scripts up to date on various boxes, so this is just here for 
+# documentation purposes at the moment, for anyone else looking at the
+# repo. 
 
 VERBOSE=1
 

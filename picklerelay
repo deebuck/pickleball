@@ -1,0 +1,77 @@
+#!/bin/bash
+#relay a pickle request to (eventually) oregano
+
+VERBOSE=1
+
+# where the pickle python script is (on oregano right now)
+PICKLESCRIPT=/home/dee/vscode/vscode/pickleball/liz5.py
+
+usage()
+{
+   echo "usage $0 <parameters to pickle script>"
+   exit 1
+}
+
+say()
+{
+    [[ -z $VERBOSE ]] || echo "$@"
+}
+
+launchpickle()
+{
+    say "launching pickle script with $@"
+    echo "python3 $PICKLESCRIPT $@ >> $PICKLELOG" | at now + 1 minute
+}
+
+sendpickle()
+{
+    say "constructing ssh command to relay pickle request to oregano"
+    # shenanigans are all about trying to put a quoted command string inside the string
+    # we give to ssh, while still allowing expansion of the parameter string in base
+    s1="ssh -p 2205 dee@oregano.wmbuck.net "
+    s2="picklerelay $@"
+    s2="\"${s2}\" " 
+    cmd="${s1}${s2}"
+    say "command is: $cmd"
+    # now construct a temporary file we can give to the at command
+    echo "#!/bin/bash" > /tmp/atcommand
+    echo "echo \"Hello World!\"" >> /tmp/atcommand
+    echo "echo Command is: $cmd" >> /tmp/atcommand
+    echo "$cmd" >> /tmp/atcommand
+    echo "echo \"goodbye Cruel World!\"" >> /tmp/atcommand
+    at -f /tmp/atcommand now + 1 minute
+    say "scheduled send of picklerelay message"
+}
+
+picklerelay()
+{
+    
+    case $MYHN in
+      oregano)
+        say "Picklerelay $@ received at `date`" 
+        launchpickle $@
+        ;;
+     *)
+        say "Picklerelay $@ forwarded to oregano at `date`"
+        sendpickle $@     
+        ;;
+    esac
+
+}
+
+# Log messages into /tmp/picklejuice/<date and time>
+[[ -d /tmp/picklejuice ]] || mkdir /tmp/picklejuice
+D=$(date +%m.%d.%y.%H%M)
+PICKLELOG=/tmp/picklejuice/$D.txt
+touch $PICKLELOG
+
+MYHN="$(hostname)"
+MYHN=${MYHN%%.*}
+
+say "This is picklerelay, running on $MYHN. The PICKLELOG is $PICKLELOG"
+picklerelay $@  >> $PICKLELOG
+
+say "Picklerelay complete at `date`" >> $PICKLELOG
+
+
+   

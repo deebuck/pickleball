@@ -3,8 +3,8 @@
 
 VERBOSE=1
 
-# where the pickle python script is (on oregano right now)
-PICKLESCRIPT=/home/dee/vscode/vscode/pickleball/liz5.py
+# where the picklemaster python script is (on oregano right now)
+PICKLESCRIPT=/home/dee/Documents/Pickleball/liz5.py
 
 usage()
 {
@@ -17,12 +17,16 @@ say()
     [[ -z $VERBOSE ]] || echo "$@"
 }
 
+# this is invoked if we are on oregano
 launchpickle()
 {
     say "launching pickle script with $@"
     echo "python3 $PICKLESCRIPT $@ >> $PICKLELOG" | at now + 1 minute
 }
 
+# this is invoked if we are on a box other than oregano.
+# usually this is tarragon, running out of the pickle reservation website.
+# if so, this instance of picklerelay is running as the apache user, www-data. 
 sendpickle()
 {
     say "constructing ssh command to relay pickle request to oregano"
@@ -33,13 +37,15 @@ sendpickle()
     s2="\"${s2}\" " 
     cmd="${s1}${s2}"
     say "command is: $cmd"
-    # now construct a temporary file we can give to the at command
+    # now construct a temporary script
     echo "#!/bin/bash" > /tmp/atcommand
     echo "echo \"Hello World!\"" >> /tmp/atcommand
     echo "echo Command is: $cmd" >> /tmp/atcommand
     echo "$cmd" >> /tmp/atcommand
     echo "echo \"goodbye Cruel World!\"" >> /tmp/atcommand
-    at -f /tmp/atcommand now + 1 minute
+    #at -f /tmp/atcommand -m "dee@wmbuck.net" now + 1 minute
+    chmod +x /tmp/atcommand
+    sudo -u dee /tmp/atcommand
     say "scheduled send of picklerelay message"
 }
 

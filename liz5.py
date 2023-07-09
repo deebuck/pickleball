@@ -487,12 +487,12 @@ picklelogger = open("picklejuice.log","w")
 try:
     parser = argparse.ArgumentParser("Make reservations for a pickleball court");
     parser.add_argument("-l", "--location", dest="Location", required=True, help="Location at which tor reserve", choices=['Cherry','Cavalier']);
-    parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in tenths of hours since midnight 24H clock. E.g. 185=6:30p.m.",
-                        choices=['10.080','10.090','10.100','10.110','10.120','10.130','10.140','10.150','10.160','10.170','10.180','10.190','10.200','10.210',
-                                 '15.080','15.095','15.110','15.125','15.140','15.155','15.170','15.185','15.200',
-                                 '20.080','20.090','20.100','20.110','20.120','20.130','20.140','20.150','20.160','20.170','20.180','20.190','20.200',
-                                 '25.095','25.125','25.155','25.185',
-                                 '30.080','30.095','30.110','30.125','30.140','30.155','30.170','30.185'
+    parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in 24H clock. E.g. 1830=6:30p.m.",
+                        choices=['10.0800','10.0900','10.1000','10.1100','10.1200','10.1300','10.1400','10.1500','10.1600','10.1700','10.1800','10.1900','10.2000','10.2100',
+                                 '15.0800','15.0930','15.1100','15.1230','15.1400','15.1530','15.1700','15.1830','15.2000',
+                                 '20.0800','20.0900','20.1000','20.1100','20.1200','20.1300','20.1400','20.1500','20.1600','20.1700','20.1800','20.1900','20.2000',
+                                 '25.0930','25.1230','25.1530','25.1830',
+                                 '30.0800','30.0930','30.1100','30.1250','30.1400','30.1530','30.1700','30.1830'
                                 ])
     parser.add_argument("-g","--debug",help="Turn on debugging",dest="Debug",action="store_true")
     parser.add_argument("-v","--verbose",help="Be loquacious",dest="Verbose",action="store_true")
@@ -523,7 +523,7 @@ for a in args.__dict__:
 record('Attempting court reservation:\n'+sargs)
 
 # built desired_times dictionary
-desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
+desired_times_dict = dict(zip(desired_time_keys_2, desired_time_values))
 
 # check if this is a dry run. Do this before we decide whether to sleep
 if dryrun: 

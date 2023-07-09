@@ -575,7 +575,7 @@ if Duration > 1.5:
 Duration = str(Duration)
 
 # this is to add "dry run" to the message, if appropriate
-drs=None
+drs=""
 if dryrun:
     drs=" (dry run)"
 

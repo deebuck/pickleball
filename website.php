@@ -87,8 +87,10 @@ if (isset($court) and isset($duration) and isset($start) and $submit=="Submit Qu
 	  </select>
 	</div>
 	<div class="entries" id="submit" style="display:none">
+	  <label for="drcheck">Dry Run?</label>
+	  <input type="checkbox" name="Dryrun" id="drb" value="1"></input>
 	  <label for="submitb">Reserve</label>
-	  <input type="submit" name="Submit" id="submitb"></input>
+	  <input type="submit" name="Submit" value="Make Reservation" id="submitb"></input>
 	</div>
       </form>
     </div>

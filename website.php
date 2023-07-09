@@ -7,9 +7,8 @@ $duration=filter_input(INPUT_POST,'Duration');
 $start=filter_input(INPUT_POST,'Start');
 $submit=filter_input(INPUT_POST,'Submit');
 
-$dayaftertomorrow = new DateTime('now', new DateTimeZone('America/New_York'));
-$dayaftertomorrow.add(new DateInterval("P2D")); 
-$sdate = $dayaftertomorrow.format("D, d M Y");
+$dayaftertomorrow=(new DateTime('now', new DateTimeZone('America/New_York')))->add(new DateInterval("P2D")); 
+$sdate = $dayaftertomorrow->format("D, d M Y");
 
 if (isset($court) and isset($duration) and isset($start) and $submit=="Submit Query") 
    {

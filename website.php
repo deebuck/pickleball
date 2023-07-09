@@ -41,7 +41,7 @@ if (isset($court) and isset($duration) and isset($start) and $submit=="Submit Qu
       function showduration(){d=$('#duration-select').value();alert(d)}
     </script>
     <H1>Cornichon Central</H1>
-    <H2>Make a pickleball reservation for <?=$sdate></H2>
+    <H2>Make a pickleball reservation for <?php echo "$sdate"?></H2>
     <div id="pickleform">
       <form method="post">
         <div class="entries">

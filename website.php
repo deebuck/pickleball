@@ -6,11 +6,12 @@ $court=filter_input(INPUT_POST,'Court');
 $duration=filter_input(INPUT_POST,'Duration');
 $start=filter_input(INPUT_POST,'Start');
 $submit=filter_input(INPUT_POST,'Submit');
+$dryrun=filter_input(INPUT_POST,'Dryrun');
 
 $dayaftertomorrow=(new DateTime('now', new DateTimeZone('America/New_York')))->add(new DateInterval("P2D")); 
 $sdate = $dayaftertomorrow->format("D, d M Y");
 
-if (isset($court) and isset($duration) and isset($start) and $submit=="Submit Query") 
+if (isset($court) and isset($duration) and isset($start) and $submit=="Reserve") 
    {
    $session=$duration.".".$start;
    dossh($session,$court);   
@@ -89,8 +90,7 @@ if (isset($court) and isset($duration) and isset($start) and $submit=="Submit Qu
 	<div class="entries" id="submit" style="display:none">
 	  <label for="drcheck">Dry Run?</label>
 	  <input type="checkbox" name="Dryrun" id="drb" value="1"></input>
-	  <label for="submitb">Reserve</label>
-	  <input type="submit" name="Submit" value="Make Reservation" id="submitb"></input>
+	  <input type="submit" name="Submit" value="Reserve" id="submitb"></input>
 	</div>
       </form>
     </div>

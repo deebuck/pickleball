@@ -74,17 +74,17 @@ if (isset($court) and isset($duration) and isset($start) and $submit=="Reserve")
 	    <option value="1100" class="10 15 20 30">11:00 am</option>
 	    <option value="1200" class="10 20">      12:00 am</option>
 	    <option value="1230" class="15 25 30">   12:30 am</option>    
-	    <option value="0100" class="10 20">       1:00 pm</option>
-	    <option value="0200" class="10 20 15 30"> 2:00 pm</option>       
-	    <option value="0300" class="10 20">       3:00 pm</option>
-	    <option value="0330" class="15 25 30">    3:30 pm</option>        
-	    <option value="0400" class="10 20">       4:00 pm</option>          
-	    <option value="0500" class="10 15 20 30"> 5:00 pm</option>        
-	    <option value="0600" class="10 20">       6:00 pm</option>
-	    <option value="0630" class="15 25 30">    6:30 pm</option>         
-	    <option value="0700" class="10 20">       7:00 pm</option>
-	    <option value="0800" class="10 15 20">    8:00 pm</option>        
-	    <option value="0900" class="10">          9:00 pm</option>
+	    <option value="1300" class="10 20">       1:00 pm</option>
+	    <option value="1400" class="10 20 15 30"> 2:00 pm</option>       
+	    <option value="1500" class="10 20">       3:00 pm</option>
+	    <option value="1530" class="15 25 30">    3:30 pm</option>        
+	    <option value="1600" class="10 20">       4:00 pm</option>          
+	    <option value="1700" class="10 15 20 30"> 5:00 pm</option>        
+	    <option value="1800" class="10 20">       6:00 pm</option>
+	    <option value="1830" class="15 25 30">    6:30 pm</option>         
+	    <option value="1900" class="10 20">       7:00 pm</option>
+	    <option value="2000" class="10 15 20">    8:00 pm</option>        
+	    <option value="2100" class="10">          9:00 pm</option>
 	  </select>
 	</div>
 	<div class="entries" id="submit" style="display:none">

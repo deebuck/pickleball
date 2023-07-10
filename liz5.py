@@ -25,6 +25,7 @@ import smtplib
 from datetime import datetime
 from datetime import timedelta
 from zoneinfo import ZoneInfo
+
 import tzdata
 
 
@@ -33,10 +34,6 @@ from selenium import webdriver
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
-
-#from selenium.webdriver import Firefox
-#from selenium.webdriver.firefox.service import Service
-#from selenium.webdriver.firefox.options import Options
 
 from selenium.webdriver.common.keys import Keys
 
@@ -70,7 +67,6 @@ secs = 0.5 # time to sleep so that we can see the pages changing
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
 
-email_recipients = "dee@wmbuck.net, lsalak@verizon.net, abrao.grynglas@gmail.com, david@salaks.net"
 
 # screenshots are saved into a local directory in some debugging situations
 my_debug_dir = '/Users/abrao/Downloads/pickleball_'
@@ -457,23 +453,32 @@ def make_reservation(my_element, my_userid, my_password):
 
     return
 
-def sendresultemail(subject):
+def sendemail(recipients,subject,body):
     msg = EmailMessage()
     msg['Subject'] = subject
-    msg['To'] = email_recipients
+    msg['To'] = recipients
     msg['From'] = "picklemaster"
-    picklelogger.close()
-    with open("picklejuice.log") as fp:
-        str = fp.read()
-        print("L:"+str)
-        msg.set_content(str)
+    msg.set_content(body)
     s = smtplib.SMTP('localhost')
     s.send_message(msg)
     s.quit()
 
+def sendresultemail(subject):
+    picklelogger.close()
+    body = ""
+    with open("picklejuice.log") as fp:
+        str = fp.read()
+        print("L:"+str)
+        body += str + "\n"
+    sendemail(email_recipients,subject,body)
+
+def sendtext(body):
+    sendemail(text_recipients,'Picklemaster says:',body)
+        
 def error(body):
     record(body)
     sendresultemail("Reservation Error")
+    sendtext("Reservation Error")
     driver.quit()    # FIX ME
     sys.exit(body)
 
@@ -520,6 +525,13 @@ for a in args.__dict__:
     if args.__dict__[a] is not None:
         sargs = sargs + a + ":" + str(args.__dict__[a]) + ",";
 
+if debug:
+    email_recipients = "dee@wmbuck.net"
+    text_recipients = "3037751709@tmomail.net" # dee 
+else:
+    email_recipients = "dee@wmbuck.net, lsalak@verizon.net, abrao.grynglas@gmail.com, david@salaks.net"
+    text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com" # dee liz
+
 record('Attempting court reservation:\n'+sargs)
 
 # built desired_times dictionary
@@ -540,24 +552,14 @@ FallsChurchtz = ZoneInfo("America/New_York")
 now = datetime.now(FallsChurchtz)
 tomorrow = now+timedelta(days=1); 
 midnight = datetime(tomorrow.year,tomorrow.month,tomorrow.day,0,0,0,0,FallsChurchtz)
+reservedate = tomorrow+timedelta(days=1)
+month = reservedate.month
+day = reservedate.day
 
 # I'm adding 1 second to be sure we don't wake up until well past midnight
 sleeptime = (midnight-now).total_seconds()+1.0
 
-if not(nowait):
-    record("Time is now "+str(now)+" Falls Church time. Sleeping for "+str(sleeptime)+" seconds, until midnight, Falls Church time.");
-    time.sleep(sleeptime)
-    now = datetime.now(FallsChurchtz)
-    tomorrow = now+timedelta(days=1)
-    if verbose: 
-        record("Awoke feeling refreshed, let's get to work! Time is now "+str(now)+" Falls Church time, tomorrow is "+str(tomorrow))
-else:
-    record("Time is now "+str(now)+" Falls Church time. Immediate is set, so not sleeping. Would have slept "+str(sleeptime)+" seconds until midnight")
-
-month = tomorrow.month
-day = tomorrow.day
-
-# now figure out what time she wants to play pickleball
+# figure out what time she wants to play pickleball
 
 desired_times = desired_times_dict[session]
 reservation_time = desired_times[0].split("-")[0].rstrip() # first time on earliest desired time
@@ -579,7 +581,19 @@ drs=""
 if dryrun:
     drs=" (dry run)"
 
-record('Reserving '+str(nReservations)+' court slots at '+court_name+' for tomorrow: '+str(month)+'/'+str(day)+" for "+Duration+" hours, times: "+str(desired_times)+drs )
+reservemessage = 'Reserving '+str(nReservations)+' court slots at '+court_name+' for: '+str(month)+'/'+str(day)+" for "+Duration+" hours, times: "+str(desired_times)+drs 
+record(reservemessage)
+sendtext(reservemessage)
+
+if not(nowait):
+    record("Time is now "+str(now)+" Falls Church time. Sleeping for "+str(sleeptime)+" seconds, until midnight, Falls Church time.");
+    time.sleep(sleeptime)
+    now = datetime.now(FallsChurchtz)
+    tomorrow = now+timedelta(days=1)
+    if verbose: 
+        record("Awoke feeling refreshed, let's get to work! Time is now "+str(now)+" Falls Church time, tomorrow is "+str(tomorrow))
+else:
+    record("Time is now "+str(now)+" Falls Church time. Immediate is set, so not sleeping. Would have slept "+str(sleeptime)+" seconds until midnight")
 
 # now set up to bring up some web pages to scrape
 options = Options()
@@ -663,6 +677,7 @@ if nReservations > 1:
 record("Reservation process was successful")
 
 sendresultemail("Reservation was successful")
+sendtext("Reservation was successful")
 ##### cleanup
 
 driver.switch_to.window(handles[0])

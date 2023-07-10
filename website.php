@@ -28,7 +28,7 @@ if (isset($court) and isset($duration) and isset($start) and $submit=="Reserve")
   </head>
   <body>
     <style>
-      body{background-image:url("Pickle.png");
+      body{background-image:url("Pickleman.png");
 	   background-color:rgba(0,0,0,0.2);
 	   background-blend-mode:lighten}
       h1{text-align:center}

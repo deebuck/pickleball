@@ -533,7 +533,8 @@ else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net, abrao.grynglas@gmail.com, david@salaks.net"
     text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com" # dee liz
 
-record('Attempting court reservation:\n'+sargs)
+if debug:
+    record('Attempting court reservation:\n'+sargs)
 
 # built desired_times dictionary
 desired_times_dict = dict(zip(desired_time_keys_2, desired_time_values))

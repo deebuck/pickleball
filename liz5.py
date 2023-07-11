@@ -64,6 +64,7 @@ session = None  # the coded value stipulating court time and duration
 logfile = None  # Log file
 
 secs = 0.5 # time to sleep so that we can see the pages changing
+midnight_delay = 30.0  # delay after midnight before we start trying to reserve
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
 
@@ -373,7 +374,7 @@ def search_atable(atable,soughttime):
                             break  # for availableTime_index in availableTimes:
             if foundtime: return foundtime # for table_index
     except Exception as e:
-        error("Exception in search_atable:", e)
+        error("Exception in searching table: "+e)
     return False
 
 #
@@ -543,21 +544,34 @@ if dryrun:
 else: 
     record("This is a live run, and will make a reservation")
 
-# unless nowait is set, we will need to wait until midnight, so that we can schedule a court for the "new" tomorrow 
 #
 # this code attempts to make all time calculations in terms 
 # of time in Falls Church
-# #
+# 
+# In immediate mode ("nowait") the reservation will be made for tomorrow
+# Otherwise (the normal mode) we wait till midnight tonight, and will then reserve for the "new" tomorrow
+#
 FallsChurchtz = ZoneInfo("America/New_York")
 now = datetime.now(FallsChurchtz)
 tomorrow = now+timedelta(days=1); 
 midnight = datetime(tomorrow.year,tomorrow.month,tomorrow.day,0,0,0,0,FallsChurchtz)
-reservedate = tomorrow+timedelta(days=1)
+#
+if nowait:
+    reservedate=tomorrow
+else:
+    reservedate = tomorrow+timedelta(days=1)
 month = reservedate.month
 day = reservedate.day
 
-# I'm adding 1 second to be sure we don't wake up until well past midnight
-sleeptime = (midnight-now).total_seconds()+1.0
+# 
+# We experienced an odd failure, which I interpret as some kind of reset occurring on their 
+# website immediately after midnight. This wouldn't surprise me. At the website end they have  
+# to somehow accommodate a change in the data availability, and this could be accompanied by
+# a reset of the web server, which could reset all the http connections. 
+#
+# I'm now adding 10 seconds to be sure we don't wake up until well past midnight
+#
+sleeptime = (midnight-now).total_seconds()+midnight_delay
 
 # figure out what time she wants to play pickleball
 

@@ -76,6 +76,8 @@ my_debug_dir = '/home/dee/Downloads/pickleball_'
 # man specified reservations require us to make 2 separate reservations
 nReservations = 1 # whether to make 1 or 2 reservations 
 
+court_type = 'Pickleball' # court_name = 'Cherry Street Court #1' 
+
 # if we make 2 reservations they have to be made by different users
 usernames = ['8158', '24270']
 passwords = ['C0rn1ch0n3!', '24270']
@@ -189,7 +191,7 @@ desired_time_keys = [
     '20.1700','20.1730',
     '20.1800','20.1830',
     '20.1900','20.1930',
-    '20.2000','20.2030',
+    '20.2000',
     '25.0830','25.0930',
     '25.1000','25.1100',
     '25.1130','25.1230',
@@ -310,9 +312,7 @@ def search_atable(atable,soughttime):
             rows = table.find_elements(By.TAG_NAME, "tr")
             
             if len(rows) > 2:
-                # Do not use a court which is 'just' a pickleball court. 
-                # Liz wants a full tennis court, with 2 picleball courts. 
-                if "Pickleball" not in rows[1].text:
+                if court_type not in rows[1].text:
                     available_time = [None, None]
                     all_available_times = rows[2].find_elements(By.TAG_NAME, "a")
                     for all_available_times_index in range(len(all_available_times)):
@@ -330,22 +330,6 @@ def search_atable(atable,soughttime):
         error("Exception in searching table: "+e)
     return False
 
-def sort_tables(tables):
-    record("Sorting available courts")
-    courttypes=[]
-    try: 
-        for table_index in range(len(tables)):
-            table = tables[table_index]
-            desc = table.find_elements(By.CSS_SELECTOR,"result-header__info h2 span")
-            if len(desc) > 1:
-                error("More than 1 court name?")
-            courttype = desc[0].text
-            print ("Appending court type "+courttype)
-            courttypes.append(courttype)
-    except Exception as e:
-        error("Exception in sorting courts: "+str(e))
-    print("Court: "+courttypes)
-    return courttypes
 #
 # Save a screenshot for debugging
 #    
@@ -510,8 +494,6 @@ if debug:
 
 # built desired_times dictionary
 desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
-#if debug: 
-#    print(desired_times_dict)
 
 # check if this is a dry run. Do this before we decide whether to sleep
 if dryrun: 
@@ -589,20 +571,18 @@ options = Options()
 if args.Headless:
     options.add_argument("--headless")
 else:
-    if not width is None: 
-        options.add_argument('--width='+width)
-    if not height is None:
-        options.add_argument('--height='+height)
+    options.add_argument('--width='+width)
+    options.add_argument('--height='+height)
 
 service = Service(log_path=os.path.devnull)
 
+driver = webdriver.Firefox(options=options, service=service)
+ 
 reservation_done = False
 available_time = [None, None]
 reserved_time = [None,None]
 tables = [None, None]
 
-driver = webdriver.Firefox(options=options, service=service)
- 
 try:
     driver.get(web_site)
     WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
@@ -613,12 +593,8 @@ try:
     while to < 3 and not found:
         try:
             found = waitelement('/html/body/div/div/div/div/div[2]/section/div/a[5]')
-        except TimeoutError as e:
-            driver.refresh()
+        except TimeoutError:
             to += 1
-
-    if not found:
-        error("Failed to find the initial element")
 
     if nReservations > 1:
         script = "window.open(" + '"' + web_site + '"' + ")"
@@ -634,7 +610,6 @@ try:
     if nReservations > 1:                                 
         driver.switch_to.window(handles[1])
         tables[1] = find_tables(day, month, reservation_time, court_name)
-        sort_tables(tables[1])
         driver.switch_to.window(handles[0])
             
     tables[0] = find_tables(day, month, reservation_time, court_name)

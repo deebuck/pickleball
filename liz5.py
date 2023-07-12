@@ -92,19 +92,19 @@ reservable_time_class = 'button multi-select full-block success cart-button cart
 # the times when courts may be reserved
 desired_time_values = [
     # 1 hour sessions
-    ['8:00 am - 9:00 am'],
-    ['9:00 am - 10:00 am'],
-    ['10:00 am - 11:00 am'],
-    ['11:00 am - 12:00 pm'],
-    ['12:00 pm - 1:00 pm'],
-    ['1:00 pm - 2:00 pm'],
-    ['2:00 pm - 3:00 pm'],
-    ['3:00 pm - 4:00 pm'],
-    ['4:00 pm - 5:00 pm'],
-    ['5:00 pm - 6:00 pm'],
-    ['6:00 pm - 7:00 pm'],
-    ['7:00 pm - 8:00 pm'],
-    ['8:00 pm - 9:00 pm'],
+    ['8:00 am - 9:00 am'],['8:30 am - 9:30 am'],
+    ['9:00 am - 10:00 am'],['9:30 am - 10:30 am'],
+    ['10:00 am - 11:00 am'],['10:30 am - 11:30 am'],
+    ['11:00 am - 12:00 pm'],['11:30 am - 12:30 pm'],
+    ['12:00 pm - 1:00 pm'],['12:30 pm - 13:30 pm'],
+    ['1:00 pm - 2:00 pm'],['1:30 pm - 2:30 pm'],
+    ['2:00 pm - 3:00 pm'],['2:30 pm - 3:30 pm'],
+    ['3:00 pm - 4:00 pm'],['3:30 pm - 4:30 pm'],
+    ['4:00 pm - 5:00 pm'],['4:30 pm - 5:30 pm'],
+    ['5:00 pm - 6:00 pm'],['5:30 pm - 6:30 pm'],
+    ['6:00 pm - 7:00 pm'],['6:30 pm - 7:30 pm'],
+    ['7:00 pm - 8:00 pm'],['7:30 pm - 8:30 pm'],
+    ['8:00 pm - 9:00 pm'],['8:30 pm - 9:30 pm'],
     ['9:00 pm - 10:00 pm'],
     # 1.5 hour sessions
     ['8:00 am - 9:30 am'],
@@ -117,24 +117,28 @@ desired_time_values = [
     ['6:30 pm - 8:00 pm'],
     ['8:00 pm - 9:30 pm'],
     # 2 hour sessions, 2 reservations 1 hour each
-    ['8:00 am - 9:00 am', '9:00 am - 10:00 am'], 
-    ['9:00 am - 10:00 am', '10:00 am - 11:00 am'], 
-    ['10:00 am - 11:00 am', '11:00 am - 12:00 pm'], 
-    ['11:00 am - 12:00 pm', '12:00 pm - 1:00 pm'], 
-    ['12:00 pm - 1:00 pm', '1:00 pm - 2:00 pm'], 
-    ['1:00 pm - 2:00 pm', '2:00 pm - 3:00 pm'], 
-    ['2:00 pm - 3:00 pm', '3:00 pm - 4:00 pm'], 
-    ['3:00 pm - 4:00 pm', '4:00 pm - 5:00 pm'], 
-    ['4:00 pm - 5:00 pm', '5:00 pm - 6:00 pm'], 
-    ['5:00 pm - 6:00 pm', '6:00 pm - 7:00 pm'], 
-    ['6:00 pm - 7:00 pm', '7:00 pm - 8:00 pm'], 
-    ['7:00 pm - 8:00 pm', '8:00 pm - 9:00 pm'], 
-    ['8:00 pm - 9:00 pm', '9:00 pm - 10:00 pm'],
-    # 2.5 hour sessions, 2 reservations, 1.5 hour followed by 1 hour
-    ['9:30 am - 11:00 am', '11:00 am - 12:00 am'], 
-    ['12:30 am - 2:00 pm', '2:00 pm - 3:00 pm'], 
-    ['3:30 pm - 5:00 pm', '5:00 pm - 6:00 pm'], 
-    ['6:30 pm - 8:00 pm', '8:00 pm - 9:00 pm'],
+    ['8:00 am - 9:00 am', '9:00 am - 10:00 am'],['8:30 am - 9:30 am', '9:30 am - 10:30 am'],
+    ['9:00 am - 10:00 am', '10:00 am - 11:00 am'],['9:30 am - 10:30 am', '10:30 am - 11:30 am'],
+    ['10:00 am - 11:00 am', '11:00 am - 12:00 pm'],['10:30 am - 11:30 am', '11:30 am - 12:30 pm'],
+    ['11:00 am - 12:00 pm', '12:00 pm - 1:00 pm'],['11:30 am - 12:30 pm', '12:30 pm - 1:30 pm'],
+    ['12:00 pm - 1:00 pm', '1:00 pm - 2:00 pm'],['12:30 pm - 1:30 pm', '1:30 pm - 2:30 pm'],
+    ['1:00 pm - 2:00 pm', '2:00 pm - 3:00 pm'],['1:30 pm - 1:30 pm', '1:30 pm - 2:30 pm'], 
+    ['2:00 pm - 3:00 pm', '3:00 pm - 4:00 pm'],['2:30 pm - 3:30 pm', '3:30 pm - 4:30 pm'],
+    ['3:00 pm - 4:00 pm', '4:00 pm - 5:00 pm'],['3:30 pm - 4:30 pm', '4:30 pm - 5:30 pm'],
+    ['4:00 pm - 5:00 pm', '5:00 pm - 6:00 pm'],['4:30 pm - 5:30 pm', '5:30 pm - 6:30 pm'],
+    ['5:00 pm - 6:00 pm', '6:00 pm - 7:00 pm'],['5:30 pm - 6:30 pm', '6:30 pm - 7:30 pm'],
+    ['6:00 pm - 7:00 pm', '7:00 pm - 8:00 pm'],['6:30 pm - 7:30 pm', '7:30 pm - 8:30 pm'],
+    ['7:00 pm - 8:00 pm', '8:00 pm - 9:00 pm'],['7:30 pm - 8:30 pm', '8:30 pm - 9:30 pm'],
+    ['8:00 pm - 9:00 pm', '9:00 pm - 10:00 pm'],['8:30 pm - 9:30 pm', '9:30 pm - 10:30 pm'],
+    # 2.5 hour sessions, 2 reservations, 1.5 hour followed by 1 hour, or 1 hour followed by 1.5 hour
+    ['8:30 am - 9:30 am', '9:30 am - 11:00 am'],['9:30 am - 11:00 am', '11:00 am - 12:00 pm'],
+    ['10:00 am - 11:00 am', '11:00 am - 12:30 am'],['11:00 am - 12:30 pm', '12:30pm - 1:30 pm'],
+    ['11:30 am - 12:30 pm', '12:30 pm - 2:00 pm'],['12:30 pm - 2:00 pm', '2:00 pm - 3:00 pm'], 
+    ['1:00 pm - 2:00 pm', '2:00 pm - 3:30 pm'], ['2:00 pm - 3:30 pm', '3:30 pm - 4:30 pm'],
+    ['2:30 pm - 3:30 pm', '3:30 pm - 5:00 pm'], ['3:30 pm - 5:00 pm', '5:00 pm - 6:00 pm'],
+    ['4:00 pm - 5:00 pm', '5:00 pm - 6:30 pm'], ['5:00 pm - 6:30 pm', '6:30 pm - 8:00 pm'],
+    ['5:30 pm - 6:30 pm', '6:30 pm - 8:00 pm'], ['6:30 pm - 8:00 pm', '8:00 pm - 9:00 pm'],
+    ['7:00 pm - 8:00 pm', '8:00 pm - 9:30 pm']
     # 3 hour sessions, 2 reservations, 1.5 hour each 
     ['8:00 am - 9:30 am', '9:30 am - 11:00 am'], 
     ['9:30 am - 11:00 am', '11:00 am - 12:30 am'], 
@@ -147,79 +151,24 @@ desired_time_values = [
 ]
 
 # the "session" argument to the program which selects the corresponding time value above
-# this is a goofy value dreamed up by someone with a diseased brain. 
 # The first integer is the duration, 1, 1.5, 2, 2.5, or 3 hours. But expressed *10 so it is an integer. 
-# The second integer after the period is the more goofy one. It is meant to represent the start time. 
-# It is basically a three digit value representing a time, in 24 hour time, but the last digit is a 
-# 5 if it is on the half-hour. So 080 is 8am but 085 is 8:30am. Since this is a 24 hours clock
-# 6:30pm is 185. 
-# If a smart person, like Mr. G, were to come up with a better scheme for stipulating the desired 
-# times, then all that is necessary is to replace this array. 
-desired_time_keys = [
-     '10.080',
-    '10.090',
-    '10.100',
-    '10.110',
-    '10.120',
-    '10.130',
-    '10.140',
-    '10.150',
-    '10.160',
-    '10.170',
-    '10.180',
-    '10.190',
-    '10.200',
-    '10.210',
-    '15.080',
-    '15.095',
-    '15.110',
-    '15.125',
-    '15.140',
-    '15.155',
-    '15.170',
-    '15.185',
-    '15.200',
-    '20.080',
-    '20.090',
-    '20.100',
-    '20.110',
-    '20.120',
-    '20.130',
-    '20.140',
-    '20.150',
-    '20.160',
-    '20.170',
-    '20.180',
-    '20.190',
-    '20.200',
-    '25.095',
-    '25.125',
-    '25.155',
-    '25.185',
-    '30.080',
-    '30.095',
-    '30.110',
-    '30.125',
-    '30.140',
-    '30.155',
-    '30.170',
-    '30.185'
-]
+# The second integer after the period is a four digit value representing a time, in 24 hour time
+# 6:30pm is 1830, 11am is 1100. 
 
-desired_time_keys_2 = [
-    '10.0800',
-    '10.0900',
-    '10.1000',
-    '10.1100',
-    '10.1200',
-    '10.1300',
-    '10.1400',
-    '10.1500',
-    '10.1600',
-    '10.1700',
-    '10.1800',
-    '10.1900',
-    '10.2000',
+desired_time_keys = [
+    '10.0800','10.0830',
+    '10.0900','10.0930',
+    '10.1000','10.1030',
+    '10.1100','10.1130',
+    '10.1200','10.1230',
+    '10.1300','10.1330',
+    '10.1400','10.1430',
+    '10.1500','10.1530',
+    '10.1600','10.1630',
+    '10.1700','10.1730',
+    '10.1800','10.1830',
+    '10.1900','10.1930',
+    '10.2000','10.2030',
     '10.2100',
     '15.0800',
     '15.0930',
@@ -230,23 +179,27 @@ desired_time_keys_2 = [
     '15.1700',
     '15.1830',
     '15.2000',
-    '20.0800',
-    '20.0900',
-    '20.1000',
-    '20.1100',
-    '20.1200',
-    '20.1300',
-    '20.1400',
-    '20.1500',
-    '20.1600',
-    '20.1700',
-    '20.1800',
-    '20.1900',
+    '20.0800','20.0830',
+    '20.0900','20.0930',
+    '20.1000','20.1030',
+    '20.1100','20.1130',
+    '20.1200','20.1230',
+    '20.1300','20.1330',
+    '20.1400','20.1430',
+    '20.1500','20.1530',
+    '20.1600','20.1630',
+    '20.1700','20.1730',
+    '20.1800','20.1830',
+    '20.1900','20.1930',
     '20.2000',
-    '25.0930',
-    '25.1230',
-    '25.1530',
-    '25.1830',
+    '25.0830','25.0930',
+    '25.1000','25.1100',
+    '25.1130','25.1230',
+    '25.1300','25.1400',
+    '25.1430','25.1530',
+    '25.1600','25.1700',
+    '25.1730','25.1830',
+    '25.1900'
     '30.0800',
     '30.0930',
     '30.1100',
@@ -494,12 +447,15 @@ try:
     parser = argparse.ArgumentParser("Make reservations for a pickleball court");
     parser.add_argument("-l", "--location", dest="Location", required=True, help="Location at which tor reserve", choices=['Cherry','Cavalier']);
     parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in 24H clock. E.g. 1830=6:30p.m.",
-                        choices=['10.0800','10.0900','10.1000','10.1100','10.1200','10.1300','10.1400','10.1500','10.1600','10.1700','10.1800','10.1900','10.2000','10.2100',
-                                 '15.0800','15.0930','15.1100','15.1230','15.1400','15.1530','15.1700','15.1830','15.2000',
-                                 '20.0800','20.0900','20.1000','20.1100','20.1200','20.1300','20.1400','20.1500','20.1600','20.1700','20.1800','20.1900','20.2000',
-                                 '25.0930','25.1230','25.1530','25.1830',
-                                 '30.0800','30.0930','30.1100','30.1250','30.1400','30.1530','30.1700','30.1830'
-                                ])
+                         choices=desired_time_keys)
+#                        choices=['10.0800','10.0900','10.1000','10.1100','10.1200','10.1300','10.1400','10.1500','10.1600','10.1700','10.1800','10.1900','10.2000','10.2100',
+#                                 '10.0830','10.0930','10.1030','10.1130','10.1230','10.1330','10.1430','10.1530','10.1630','10.1730','10.1830','10.1930','10.2030','10.2130'
+#                                 '15.0800','15.0930','15.1100','15.1230','15.1400','15.1530','15.1700','15.1830','15.2000',
+#                                 '20.0800','20.0900','20.1000','20.1100','20.1200','20.1300','20.1400','20.1500','20.1600','20.1700','20.1800','20.1900','20.2000',
+#                                 '20.0830','20.0930','20.1030','20.1130','20.1230','20.1330','20.1430','20.1530','20.1630','20.1730','20.1830','20.1930','20.2030',
+#                                 '25.0930','25.1230','25.1530','25.1830',
+#                                 '30.0800','30.0930','30.1100','30.1250','30.1400','30.1530','30.1700','30.1830'
+#                                ])
     parser.add_argument("-g","--debug",help="Turn on debugging",dest="Debug",action="store_true")
     parser.add_argument("-v","--verbose",help="Be loquacious",dest="Verbose",action="store_true")
     parser.add_argument("-z","--headless",help="Headless, don't show webpage",dest="Headless",action="store_true")
@@ -537,7 +493,7 @@ if debug:
     record('Attempting court reservation:\n'+sargs)
 
 # built desired_times dictionary
-desired_times_dict = dict(zip(desired_time_keys_2, desired_time_values))
+desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
 
 # check if this is a dry run. Do this before we decide whether to sleep
 if dryrun: 
@@ -570,7 +526,7 @@ day = reservedate.day
 # to somehow accommodate a change in the data availability, and this could be accompanied by
 # a reset of the web server, which could reset all the http connections. 
 #
-# I'm now adding 10 seconds to be sure we don't wake up until well past midnight
+# I'm now adding a delay to be sure we don't wake up until well past midnight
 #
 sleeptime = (midnight-now).total_seconds()+midnight_delay
 
@@ -631,6 +587,15 @@ try:
     driver.get(web_site)
     WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
     
+    # ensure that the page is stable, and that the desired "tennis court" element is present
+    to=0
+    found=False
+    while to < 3 and not found:
+        try:
+            found = waitelement('/html/body/div/div/div/div/div[2]/section/div/a[5]')
+        except TimeoutError:
+            to += 1
+
     if nReservations > 1:
         script = "window.open(" + '"' + web_site + '"' + ")"
         driver.execute_script("window.open(" + '"' + web_site + '"' + ")")

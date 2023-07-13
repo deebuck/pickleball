@@ -51,15 +51,16 @@ from email.message import EmailMessage
 args=None # arguments to the program
 
 # these are set by arguments to the program 
-dryrun = 1      # do not actually make reservations, stop before clicking the final button
-verbose = None  # more chatty
-debug = True    # generate debugging messages
-width = 1200    # width of screen, unless headless
-height = 1200   # height of screen, unless headless
-headless = None # "headless": do not show a browser screen on console
-nowait = False  # "immediate": do the look/reserve right away, don't wait for midnight
-court_name = 'Cherry' # "location": location at which to reserve 
-session = None  # the coded value stipulating court time and duration
+dryrun = 1        # do not actually make reservations, stop before clicking the final button
+verbose = None    # more chatty
+debug = True      # generate debugging messages, only send email/texts to dee
+width = 1200      # width of screen, unless headless
+height = 1200     # height of screen, unless headless
+headless = None   # "headless": do not show a browser screen on console
+immediate = False # do the look/reserve right away, don't wait for midnight
+court_name = None # "location": location at which to reserve 
+session = None    # the coded value stipulating court time and duration
+preference = None # a string with court preferences
 
 logfile = None  # Log file
 
@@ -210,6 +211,21 @@ desired_time_keys = [
     '30.1830'
 ]
 
+preferences = [
+    "ChT1": [ "locn" : "Cherry", "facility": "Court #1", "type": "Tennis" ],
+    "ChT2": [ "locn" : "Cherry", "facility": "Court #2", "type": "Tennis" ],
+    "ChP1": [ "locn" : "Cherry", "facility": "Pickleball #1", "type": "Pickleball" ],
+    "ChP2": [ "locn" : "Cherry", "facility": "Pickleball #2", "type": "Pickleball" ],
+    "ChP3": [ "locn" : "Cherry", "facility": "Pickleball #3", "type": "Pickleball" ],
+    "ChP4": [ "locn" : "Cherry", "facility": "Pickleball #4", "type": "Pickleball" ],
+    "CvT1": [ "locn" : "Cavalier", "facility": "Court #1", "type": "Tennis" ],
+    "CvT2": [ "locn" : "Cavalier", "facility": "Court #2", "type": "Tennis" ],
+    "CvP1": [ "locn" : "Cavalier", "facility": "Pickleball #1", "type": "Pickleball" ],
+    "CvP2": [ "locn" : "Cavalier", "facility": "Pickleball #2", "type": "Pickleball" ],
+    "CvP3": [ "locn" : "Cavalier", "facility": "Pickleball #3", "type": "Pickleball" ],
+    "CvP4": [ "locn" : "Cavalier", "facility": "Pickleball #4", "type": "Pickleball" ],
+]
+
 # utility functions, to make it easier to read
 
 def waitelement(path):
@@ -229,8 +245,14 @@ def waitclickw(path):
 def findelement(path):
     return driver.find_element(By.XPATH,path)
 
+def findelementbyCSS(selector):
+    return driver.find_element(By.CSS_SELECTOR,selector)
+
 def clickelement(path):
     findelement(path).click()
+
+def clickelementbyCSS(selector):
+    findelementbyCSS(selector).click()
 
 # recording and debuging
 
@@ -239,11 +261,11 @@ def record(msg):
         print(msg)
     picklelogger.write(msg+"\n")
 
+# Function to navigate a web page reservation window, specifying the date (myday, mymonth) and obtain the html elements for the table of available 
+# court locations and times, returning that table for subsequent analysis. 
+# The program now selects the courts both at Cavalier Trail and North Cherry Street. 
 
-# function to navigate a web page reservation window, specifying the date (myday, mymonth) and location (mycourt_name) in order to obtain the tables for available court times.
-# The table containing times is returened.  
-
-def find_tables(myday, mymonth, myreservation_time, mycourt_name):
+def fetch_tables(myday, mymonth, myreservation_time):
     
     monthNum = mymonth
     dayNum = myday
@@ -273,29 +295,53 @@ def find_tables(myday, mymonth, myreservation_time, mycourt_name):
         
     beginTimeElement.send_keys(myreservation_time)
 
-    # now selecting the location - click on the dropdown list icon, then enter the location, then click select all
+    # now selecting the location - click on the dropdown list icon, then select the location
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/label/span[1]')
-    findelement('//*[@id="location_vm_1_filter_input"]').send_keys(mycourt_name)
-    clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div[1]/div/div/div[2]/a[1]')
 
-    # click on Max Available Blocks to Display - need 6 because of blocks starting with 5:00 pm and 5:30 pm
+    # The original version entered a court name string (which did an autocomplete action) then clicked select all
+    #findelement('//*[@id="location_vm_1_filter_input"]').send_keys(mycourt_name)
+    #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div[1]/div/div/div[2]/a[1]')
+
+    # The newer version clicks the select boxes for both Cavalier and Cherry. This is kludgy and fragile. 
+    # It would be better to check the li's and check for the courts we want
+    clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[1]')
+    clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[4]')
+    
+    # click on Max Available Blocks to Display to activate drop down
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[4]/label/span')
     clickelement('//*[@id="blockstodisplay_vm_2_button"]')
  
-    # need 6 blocks: 5:00 pm - 6:00 pm and 5:00 pm - 6:30 pm ... 6:30 pm - 8:00 pm
+    # select 6 blocks: the maximum we can display
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[4]/div[1]/div/div/ul/li[6]/span')
 
-    # click on Search button - will change pages
+    # click on Search button: this will refresh the page with the table of court times, types, locations
     clickelement('//*[@id="frwebsearch_buttonsearch"]')
 
-    # make sure all search tables are visible, don't need result
+    # here we wait to ensure the search tables are visible, don't need result
     waitelement('//*[@id="frwebsearch_output_table"]')
 
-    # find reservation tables
+    # find all the court reservation tables
     tables = driver.find_elements(By.CLASS_NAME, "result-content")
+    analyze_tables(tables)
 
     return tables
 
+def analyze_tables(tables):
+    for t in range(len(tables)):
+        print("Table "+str(t)) 
+        table = tables[t]
+        rows = table.find_elements(By.TAG_NAME, "tr")
+        data = rows[1].find_elements(By.TAG_NAME, "td")
+        facility = data[1].text
+        location = data[2].text
+        courttype = data[3].text
+        print("Facility: "+facility+" Location: "+location+" Type: "+courttype); 
+        avail = rows[2].find_elements(By.CSS_SELECTOR, "a.success")
+        unavail = rows[2].find_elements(By.CSS_SELECTOR,"a.error")
+        for tm in range(len(avail)):
+            print("Available times: "+avail[tm].text)
+        for tm in range(len(unavail)):
+            print("Unavailable times: "+unavail[tm].text)
 
 #
 # Search the available times table (returned by find_tables) looking for a specific desired time
@@ -327,7 +373,7 @@ def search_atable(atable,soughttime):
                             break  # for availableTime_index in availableTimes:
             if foundtime: return foundtime # for table_index
     except Exception as e:
-        error("Exception in searching table: "+e)
+        error("Exception in searching table: "+str(e))
     return False
 
 #
@@ -445,21 +491,14 @@ picklelogger = open("picklejuice.log","w")
 # first parse the arguments
 try:
     parser = argparse.ArgumentParser("Make reservations for a pickleball court");
-    parser.add_argument("-l", "--location", dest="Location", required=True, help="Location at which tor reserve", choices=['Cherry','Cavalier']);
+    parser.add_argument("-l", "--location", dest="Location", help="Location at which to reserve", choices=['Cherry','Cavalier'])
+    parser.add_argument("-p", "--preferences", dest="Preferences", help="Preference for location", nargs='*')
     parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in 24H clock. E.g. 1830=6:30p.m.",
                          choices=desired_time_keys)
-#                        choices=['10.0800','10.0900','10.1000','10.1100','10.1200','10.1300','10.1400','10.1500','10.1600','10.1700','10.1800','10.1900','10.2000','10.2100',
-#                                 '10.0830','10.0930','10.1030','10.1130','10.1230','10.1330','10.1430','10.1530','10.1630','10.1730','10.1830','10.1930','10.2030','10.2130'
-#                                 '15.0800','15.0930','15.1100','15.1230','15.1400','15.1530','15.1700','15.1830','15.2000',
-#                                 '20.0800','20.0900','20.1000','20.1100','20.1200','20.1300','20.1400','20.1500','20.1600','20.1700','20.1800','20.1900','20.2000',
-#                                 '20.0830','20.0930','20.1030','20.1130','20.1230','20.1330','20.1430','20.1530','20.1630','20.1730','20.1830','20.1930','20.2030',
-#                                 '25.0930','25.1230','25.1530','25.1830',
-#                                 '30.0800','30.0930','30.1100','30.1250','30.1400','30.1530','30.1700','30.1830'
-#                                ])
     parser.add_argument("-g","--debug",help="Turn on debugging",dest="Debug",action="store_true")
     parser.add_argument("-v","--verbose",help="Be loquacious",dest="Verbose",action="store_true")
     parser.add_argument("-z","--headless",help="Headless, don't show webpage",dest="Headless",action="store_true")
-    parser.add_argument("-i","--immediate",help="Do not wait till midnight",dest="Nowait",action="store_true")
+    parser.add_argument("-i","--immediate",help="Do not wait till midnight",dest="Immediate",action="store_true")
     parser.add_argument("-d","--dry-run",help="Dry run, don't make a reservation",dest="Dryrun",action="store_true")
     parser.add_argument("-x","--width",help="Window width unless headless",dest="Width",action="store")
     parser.add_argument("-y","--height",help="Window height unless headless",dest="Height",action="store")
@@ -470,12 +509,15 @@ except Exception as e:
 debug = args.Debug
 verbose = args.Verbose
 headless = args.Headless
-nowait = args.Nowait
+immediate = args.Immediate
 width = args.Width
 height = args.Height
-court_name=args.Location 
+court_name=args.Location      # deprecated
+court_prefs=args.Preferences
 session = args.Session
 dryrun = args.Dryrun
+
+record("Preferences: "+str(court_prefs))
 
 sargs = "Arguments: "
 for a in args.__dict__:
@@ -505,7 +547,7 @@ else:
 # this code attempts to make all time calculations in terms 
 # of time in Falls Church
 # 
-# In immediate mode ("nowait") the reservation will be made for tomorrow
+# In immediate mode the reservation will be made for tomorrow
 # Otherwise (the normal mode) we wait till midnight tonight, and will then reserve for the "new" tomorrow
 #
 FallsChurchtz = ZoneInfo("America/New_York")
@@ -513,7 +555,7 @@ now = datetime.now(FallsChurchtz)
 tomorrow = now+timedelta(days=1); 
 midnight = datetime(tomorrow.year,tomorrow.month,tomorrow.day,0,0,0,0,FallsChurchtz)
 #
-if nowait:
+if immediate:
     reservedate=tomorrow
 else:
     reservedate = tomorrow+timedelta(days=1)
@@ -552,11 +594,11 @@ drs=""
 if dryrun:
     drs=" (dry run)"
 
-reservemessage = 'Reserving '+str(nReservations)+' court slots at '+court_name+' for: '+str(month)+'/'+str(day)+" for "+Duration+" hours, times: "+str(desired_times)+drs 
+reservemessage = 'Reserving '+str(nReservations)+' court slots for: '+str(month)+'/'+str(day)+" for "+Duration+" hours, times: "+str(desired_times)+drs 
 record(reservemessage)
 sendtext(reservemessage)
 
-if not(nowait):
+if not(immediate):
     record("Time is now "+str(now)+" Falls Church time. Sleeping for "+str(sleeptime)+" seconds, until midnight, Falls Church time.");
     time.sleep(sleeptime)
     now = datetime.now(FallsChurchtz)
@@ -564,7 +606,7 @@ if not(nowait):
     if verbose: 
         record("Awoke feeling refreshed, let's get to work! Time is now "+str(now)+" Falls Church time, tomorrow is "+str(tomorrow))
 else:
-    record("Time is now "+str(now)+" Falls Church time. Immediate is set, so not sleeping. Would have slept "+str(sleeptime)+" seconds until midnight")
+    record("Time is now "+str(now)+" Falls Church time. Immediate is set, so not sleeping.")
 
 # now set up to bring up some web pages to scrape
 options = Options()
@@ -609,10 +651,10 @@ try:
 
     if nReservations > 1:                                 
         driver.switch_to.window(handles[1])
-        tables[1] = find_tables(day, month, reservation_time, court_name)
+        tables[1] = fetch_tables(day, month, reservation_time)
         driver.switch_to.window(handles[0])
             
-    tables[0] = find_tables(day, month, reservation_time, court_name)
+    tables[0] = fetch_tables(day, month, reservation_time)
     
     # now trying to find a court with availability at the desired time(s)
     first_time = second_time = None
@@ -636,7 +678,7 @@ try:
     if nReservations > 1:
         record("Will make a second reservation for "+second_time)
 except Exception as e:
-    error("Exception during table search stage:",e)
+    error("Exception during table search stage:"+str(e))
 
 ### code to make the resevations:
 

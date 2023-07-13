@@ -1,7 +1,0 @@
-Attempting court reservation:
-Arguments: Location:Cavalier,Session:30.1700,Debug:True,Verbose:True,Headless:True,Nowait:True,Dryrun:True,
-This is a dry run
-Reserving 2 court slots at Cavalier for: 7/12 for 3.0 hours, times: ['5:00 pm - 6:30 pm', '6:30 pm - 8:00 pm'] (dry run)
-Time is now 2023-07-10 11:37:27.848869-04:00 Falls Church time. Immediate is set, so not sleeping. Would have slept 44553.151131 seconds until midnight
-Searching for a court at: 5:00 pm - 6:30 pm
-Could not find a time slot to reserve

@@ -211,20 +211,22 @@ desired_time_keys = [
     '30.1830'
 ]
 
-preferences = [
-    "ChT1": [ "locn" : "Cherry", "facility": "Court #1", "type": "Tennis" ],
-    "ChT2": [ "locn" : "Cherry", "facility": "Court #2", "type": "Tennis" ],
-    "ChP1": [ "locn" : "Cherry", "facility": "Pickleball #1", "type": "Pickleball" ],
-    "ChP2": [ "locn" : "Cherry", "facility": "Pickleball #2", "type": "Pickleball" ],
-    "ChP3": [ "locn" : "Cherry", "facility": "Pickleball #3", "type": "Pickleball" ],
-    "ChP4": [ "locn" : "Cherry", "facility": "Pickleball #4", "type": "Pickleball" ],
-    "CvT1": [ "locn" : "Cavalier", "facility": "Court #1", "type": "Tennis" ],
-    "CvT2": [ "locn" : "Cavalier", "facility": "Court #2", "type": "Tennis" ],
-    "CvP1": [ "locn" : "Cavalier", "facility": "Pickleball #1", "type": "Pickleball" ],
-    "CvP2": [ "locn" : "Cavalier", "facility": "Pickleball #2", "type": "Pickleball" ],
-    "CvP3": [ "locn" : "Cavalier", "facility": "Pickleball #3", "type": "Pickleball" ],
-    "CvP4": [ "locn" : "Cavalier", "facility": "Pickleball #4", "type": "Pickleball" ],
-]
+# This is a mapping of the preference specification coming in on the command line to the values which will be found 
+# in the reservation tables. 
+preferences = {
+    'ChT1': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Court #1",       "type": "Tennis Court" },
+    'ChT2': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Court #2",       "type": "Tennis Court" },
+    'ChP1': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Pickleball #1",  "type": "Pickleball Courts" },
+    'ChP2': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Pickleball #2",  "type": "Pickleball Courts" },
+    'ChP3': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Pickleball #3",  "type": "Pickleball Courts" },
+    'ChP4': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Pickleball #4",  "type": "Pickleball Courts" },
+    'CvT1': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Court #1",      "type": "Tennis Court" },
+    'CvT2': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Court #2",      "type": "Tennis Court" },
+    'CvP1': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #1", "type": "Pickleball Courts" },
+    'CvP2': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #2", "type": "Pickleball Courts" },
+    'CvP3': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #3", "type": "Pickleball Courts" },
+    'CvP4': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #4", "type": "Pickleball Courts" }
+}
 
 # utility functions, to make it easier to read
 
@@ -322,11 +324,12 @@ def fetch_tables(myday, mymonth, myreservation_time):
 
     # find all the court reservation tables
     tables = driver.find_elements(By.CLASS_NAME, "result-content")
-    analyze_tables(tables)
+    # dump_tables(tables)
 
     return tables
 
-def analyze_tables(tables):
+# This was for debugging, it dumps out what times are available and/or unavailable in a set of tables 
+def dump_tables(tables):
     for t in range(len(tables)):
         print("Table "+str(t)) 
         table = tables[t]
@@ -335,7 +338,7 @@ def analyze_tables(tables):
         facility = data[1].text
         location = data[2].text
         courttype = data[3].text
-        print("Facility: "+facility+" Location: "+location+" Type: "+courttype); 
+        print(" Location: "+location+" Facility: "+facility+" Type: "+courttype); 
         avail = rows[2].find_elements(By.CSS_SELECTOR, "a.success")
         unavail = rows[2].find_elements(By.CSS_SELECTOR,"a.error")
         for tm in range(len(avail)):
@@ -348,30 +351,31 @@ def analyze_tables(tables):
 # atable is the table returned from find_tables
 # soughttime is a string time specification 
 #
-def search_atable(atable,soughttime): 
+def search_atable(atable,preference,soughttime): 
     foundtime = False  
-    record("Searching for a court at: "+str(soughttime))   
+    location = preference["location"]
+    type = preference["type"]
+    facility = preference["facility"]
+    if debug: 
+        record ("Searching for "+facility+" at time "+str(soughttime))   
     try: 
         for table_index in range(len(atable)):
             table = atable[table_index]
-            
             rows = table.find_elements(By.TAG_NAME, "tr")
-            
-            if len(rows) > 2:
-                if court_type not in rows[1].text:
-                    available_time = [None, None]
-                    all_available_times = rows[2].find_elements(By.TAG_NAME, "a")
-                    for all_available_times_index in range(len(all_available_times)):
-                        curr_available_time = all_available_times[all_available_times_index]                            
-                        available_time_class = curr_available_time.get_attribute("class")
-                        if available_time_class == reservable_time_class and soughttime in curr_available_time.text:
-                            foundtime = curr_available_time
-                            record("Found a court available at " + foundtime.text)
-                            first_index  = rows[1].text.find(court_name)
-                            second_index = rows[1].text.find('Item Details')
-                            reserved_court   = rows[1].text[first_index:second_index]
-                            break  # for availableTime_index in availableTimes:
-            if foundtime: return foundtime # for table_index
+            data=rows[1].find_elements(By.TAG_NAME, "td")
+            if facility in data[1].text and location in data[2].text and type in data[3].text: 
+                if debug: 
+                    record("Found matching facility, location and type, checking times") 
+                available_time = [None, None]
+                all_available_times = rows[2].find_elements(By.CSS_SELECTOR, "a.success")
+                for all_available_times_index in range(len(all_available_times)):
+                    curr_available_time = all_available_times[all_available_times_index]                            
+                    if soughttime in curr_available_time.text:
+                        foundtime = curr_available_time
+                        record("Found a court available at " + facility + " at " + foundtime.text)
+                        break  # for availableTime_index in availableTimes:
+            if foundtime: 
+                return foundtime 
     except Exception as e:
         error("Exception in searching table: "+str(e))
     return False
@@ -491,8 +495,7 @@ picklelogger = open("picklejuice.log","w")
 # first parse the arguments
 try:
     parser = argparse.ArgumentParser("Make reservations for a pickleball court");
-    parser.add_argument("-l", "--location", dest="Location", help="Location at which to reserve", choices=['Cherry','Cavalier'])
-    parser.add_argument("-p", "--preferences", dest="Preferences", help="Preference for location", nargs='*')
+    parser.add_argument("-p", "--preferences", dest="Preferences", help="Preference for location [Cv or CH][court type T or P][number], e.g. ChT2 of CvP4", nargs='*')
     parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in 24H clock. E.g. 1830=6:30p.m.",
                          choices=desired_time_keys)
     parser.add_argument("-g","--debug",help="Turn on debugging",dest="Debug",action="store_true")
@@ -512,27 +515,27 @@ headless = args.Headless
 immediate = args.Immediate
 width = args.Width
 height = args.Height
-court_name=args.Location      # deprecated
-court_prefs=args.Preferences
 session = args.Session
 dryrun = args.Dryrun
 
-record("Preferences: "+str(court_prefs))
-
-sargs = "Arguments: "
-for a in args.__dict__:
-    if args.__dict__[a] is not None:
-        sargs = sargs + a + ":" + str(args.__dict__[a]) + ",";
+# Process the incoming shorthand preference request, and turn it into the full specification 
+# that will show up in the tables. 
+court_prefs = []
+for p in range(len(args.Preferences)):
+    pref = preferences[args.Preferences[p]]
+    court_prefs.append(pref)
 
 if debug:
     email_recipients = "dee@wmbuck.net"
     text_recipients = "3037751709@tmomail.net" # dee 
+    sargs = "Arguments: "
+    for a in args.__dict__:
+        if args.__dict__[a] is not None:
+            sargs = sargs + a + ":" + str(args.__dict__[a]) + ",";
+    record('Attempting court reservation:\n'+sargs)
 else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net, abrao.grynglas@gmail.com, david@salaks.net"
     text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com" # dee liz
-
-if debug:
-    record('Attempting court reservation:\n'+sargs)
 
 # built desired_times dictionary
 desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
@@ -659,14 +662,18 @@ try:
     # now trying to find a court with availability at the desired time(s)
     first_time = second_time = None
 
-    available_time[0] = search_atable(tables[0],desired_times[0])
-    if available_time[0]: 
-        first_time = available_time[0].text
-        if nReservations >1:
-            driver.switch_to.window(handles[1])
-            available_time[1] = search_atable(tables[1],desired_times[1])
-            second_time = available_time[1].text
-            driver.switch_to.window(handles[0])
+    # check against each of the preferences we were give for a court and type at the indicated time 
+    for p in range(len(court_prefs)):
+        available_time[0] = search_atable(tables[0],court_prefs[p],desired_times[0])
+        if available_time[0]: 
+            first_time = available_time[0].text
+            if nReservations >1:
+                driver.switch_to.window(handles[1])
+                available_time[1] = search_atable(tables[1],court_prefs[p],desired_times[1])
+                second_time = available_time[1].text
+                driver.switch_to.window(handles[0])
+        if first_time and second_time: 
+            break #for loop over possible prefs
 
     if not(first_time):
         error("Could not find a time slot to reserve")

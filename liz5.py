@@ -496,15 +496,14 @@ picklelogger = open("picklejuice.log","w")
 try:
     parser = argparse.ArgumentParser("Make reservations for a pickleball court");
     parser.add_argument("-p", "--preferences", dest="Preferences", help="Preference for location [Cv or CH][court type T or P][number], e.g. ChT2 of CvP4", nargs='*')
-    parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in 24H clock. E.g. 1830=6:30p.m.",
-                         choices=desired_time_keys)
-    parser.add_argument("-g","--debug",help="Turn on debugging",dest="Debug",action="store_true")
-    parser.add_argument("-v","--verbose",help="Be loquacious",dest="Verbose",action="store_true")
-    parser.add_argument("-z","--headless",help="Headless, don't show webpage",dest="Headless",action="store_true")
-    parser.add_argument("-i","--immediate",help="Do not wait till midnight",dest="Immediate",action="store_true")
-    parser.add_argument("-d","--dry-run",help="Dry run, don't make a reservation",dest="Dryrun",action="store_true")
-    parser.add_argument("-x","--width",help="Window width unless headless",dest="Width",action="store")
-    parser.add_argument("-y","--height",help="Window height unless headless",dest="Height",action="store")
+    parser.add_argument("-s", "--session", dest="Session",required=True, help="Session duration & start time, in 24H clock. E.g. 1830=6:30p.m.",choices=desired_time_keys)
+    parser.add_argument("-g", "--debug",help="Turn on debugging",dest="Debug",action="store_true")
+    parser.add_argument("-v", "--verbose",help="Be loquacious",dest="Verbose",action="store_true")
+    parser.add_argument("-z", "--headless",help="Headless, don't show webpage",dest="Headless",action="store_true")
+    parser.add_argument("-i", "--immediate",help="Do not wait till midnight",dest="Immediate",action="store_true")
+    parser.add_argument("-d", "--dry-run",help="Dry run, don't make a reservation",dest="Dryrun",action="store_true")
+    parser.add_argument("-x", "--width",help="Window width unless headless",dest="Width",action="store")
+    parser.add_argument("-y", "--height",help="Window height unless headless",dest="Height",action="store")
     args = parser.parse_args();
 except Exception as e:
     error("Exception parsing arguments")

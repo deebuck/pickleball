@@ -64,6 +64,7 @@ if (isset($court) and isset($duration) and isset($start) and $submit=="Reserve")
 	</div>
 	<div class="entries" id="add-court">
 		<input type="submit" name="Add" value="Add" id="addb"></input>
+		<input type="submit" name="Done" value="Done" id="doneb"></input>
 	</div>
 	<div class="entries" id="durations" style="display:none">
 	  <span class="stub">Duration:</span>

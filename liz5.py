@@ -192,7 +192,7 @@ desired_time_keys = [
     '20.1700','20.1730',
     '20.1800','20.1830',
     '20.1900','20.1930',
-    '20.2000',
+    '20.2000','20.2030',
     '25.0830','25.0930',
     '25.1000','25.1100',
     '25.1130','25.1230',
@@ -256,18 +256,75 @@ def clickelement(path):
 def clickelementbyCSS(selector):
     findelementbyCSS(selector).click()
 
-# recording and debuging
+# recording, debuging, communications
 
 def record(msg):
     if verbose:
         print(msg)
     picklelogger.write(msg+"\n")
 
-# Function to navigate a web page reservation window, specifying the date (myday, mymonth) and obtain the html elements for the table of available 
-# court locations and times, returning that table for subsequent analysis. 
-# The program now selects the courts both at Cavalier Trail and North Cherry Street. 
+def sendemail(recipients,subject,body):
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['To'] = recipients
+    msg['From'] = "picklemaster"
+    msg.set_content(body)
+    s = smtplib.SMTP('localhost')
+    s.send_message(msg)
+    s.quit()
 
-def fetch_tables(myday, mymonth, myreservation_time):
+def sendtext(body):
+    sendemail(text_recipients,'Picklemaster says:',body)
+        
+def sendresultemail(subject):
+    picklelogger.close()
+    body = ""
+    with open("picklejuice.log") as fp:
+        str = fp.read()
+        body += str + "\n"
+    sendemail(email_recipients,subject,body)
+
+def error(body):
+    record(body)
+    sendresultemail("Reservation Error")
+    sendtext("Reservation Error")
+    driver.quit()    # FIX ME
+    sys.exit(body)
+#
+# Save a screenshot for debugging
+#    
+def do_screenshot():
+    if debug:
+        my_date_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        my_file = my_debug_dir + my_date_time + '.png'
+        driver.save_full_page_screenshot(my_file)
+        record("Debug: screen shot saved as: "+my_file)
+    
+# This was for debugging, it dumps out what times are available and/or unavailable in a table set 
+def dump_tableset(tableset):
+    for t in range(len(tableset)):
+        print("Table Set "+str(t)) 
+        table = tableset[t]
+        rows = table.find_elements(By.TAG_NAME, "tr")
+        data = rows[1].find_elements(By.TAG_NAME, "td")
+        facility = data[1].text
+        location = data[2].text
+        courttype = data[3].text
+        print(" Location: "+location+" Facility: "+facility+" Type: "+courttype); 
+        avail = rows[2].find_elements(By.CSS_SELECTOR, "a.success")
+        unavail = rows[2].find_elements(By.CSS_SELECTOR,"a.error")
+        for tm in range(len(avail)):
+            print("Available times: "+avail[tm].text)
+        for tm in range(len(unavail)):
+            print("Unavailable times: "+unavail[tm].text)
+
+
+# These are the "substantive" routines
+
+# Function to navigate a web page reservation window, specifying the date (myday, mymonth) and obtain the html elements for the table of available 
+# court locations and times, returning that tableset for subsequent analysis. 
+# The program now selects the courts both at Cavalier Trail and North Cherry Street, for date mymont/myday. It fetches at time myreservation_tim. 
+def fetch_tableset(myday, mymonth, myreservation_time):
     
     monthNum = mymonth
     dayNum = myday
@@ -275,7 +332,7 @@ def fetch_tables(myday, mymonth, myreservation_time):
     # click in first page Tennis pic 
     waitclickw('/html/body/div/div/div/div/div[2]/section/div/a[5]')
 
-    # now on second page
+    # activate the date drop-down
     waitclickw('//*[@id="date_vm_4_button"]')
 
     # click month button
@@ -292,12 +349,14 @@ def fetch_tables(myday, mymonth, myreservation_time):
     # select time
     beginTimeElement = waitelement('/html/body/div[1]/div[1]/div/div/form/div[1]/div[1]/div[1]/div[2]/div[1]/div/input')
     
+    # the time select is pre-filled with 8:00AM, erase that
     for i in range(len('8:00AM')):
         beginTimeElement.send_keys((Keys.BACKSPACE))
         
+    # and put in our own value    
     beginTimeElement.send_keys(myreservation_time)
 
-    # now selecting the location - click on the dropdown list icon, then select the location
+    # now selecting the location - click on the location dropdown list icon, then select the location(s)
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/label/span[1]')
 
     # The original version entered a court name string (which did an autocomplete action) then clicked select all
@@ -305,104 +364,77 @@ def fetch_tables(myday, mymonth, myreservation_time):
     #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div[1]/div/div/div[2]/a[1]')
 
     # The newer version clicks the select boxes for both Cavalier and Cherry. This is kludgy and fragile. 
-    # It would be better to check the li's and check for the courts we want
+    # It would be better to check the li's and look for the courts we want
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[1]')
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[4]')
     
-    # click on Max Available Blocks to Display to activate drop down
+    # click on Max Available Blocks to Display to show the drop down, then activate the drop-down
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[4]/label/span')
     clickelement('//*[@id="blockstodisplay_vm_2_button"]')
  
     # select 6 blocks: the maximum we can display
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[4]/div[1]/div/div/ul/li[6]/span')
 
-    # click on Search button: this will refresh the page with the table of court times, types, locations
+    # click on Search button: this will refresh the page with the tableset of court times, types, locations
     clickelement('//*[@id="frwebsearch_buttonsearch"]')
 
     # here we wait to ensure the search tables are visible, don't need result
     waitelement('//*[@id="frwebsearch_output_table"]')
 
-    # find all the court reservation tables
-    tables = driver.find_elements(By.CLASS_NAME, "result-content")
-    # dump_tables(tables)
+    # obtain the court reservation tableset
+    tableset = driver.find_elements(By.CLASS_NAME, "result-content")
+    # dump_tableset(tables)
 
-    return tables
-
-# This was for debugging, it dumps out what times are available and/or unavailable in a set of tables 
-def dump_tables(tables):
-    for t in range(len(tables)):
-        print("Table "+str(t)) 
-        table = tables[t]
-        rows = table.find_elements(By.TAG_NAME, "tr")
-        data = rows[1].find_elements(By.TAG_NAME, "td")
-        facility = data[1].text
-        location = data[2].text
-        courttype = data[3].text
-        print(" Location: "+location+" Facility: "+facility+" Type: "+courttype); 
-        avail = rows[2].find_elements(By.CSS_SELECTOR, "a.success")
-        unavail = rows[2].find_elements(By.CSS_SELECTOR,"a.error")
-        for tm in range(len(avail)):
-            print("Available times: "+avail[tm].text)
-        for tm in range(len(unavail)):
-            print("Unavailable times: "+unavail[tm].text)
+    return tableset
 
 #
-# Search the available times table (returned by find_tables) looking for a specific desired time
-# atable is the table returned from find_tables
+# Search an available times tableset (returned by fetch_tableset) looking for a specific desired time
+# tableset is the tableset returned from fetch_tableset
 # soughttime is a string time specification 
 #
-def search_atable(atable,preference,soughttime): 
+def search_tableset(tableset,preference,soughttime): 
     foundtime = False  
     location = preference["location"]
     type = preference["type"]
     facility = preference["facility"]
     if debug: 
-        record ("Searching for "+facility+" at time "+str(soughttime))   
+        record ("Checking "+facility)   
     try: 
-        for table_index in range(len(atable)):
-            table = atable[table_index]
+        for table_index in range(len(tableset)):
+            table = tableset[table_index]
             rows = table.find_elements(By.TAG_NAME, "tr")
             data=rows[1].find_elements(By.TAG_NAME, "td")
             if facility in data[1].text and location in data[2].text and type in data[3].text: 
-                if debug: 
-                    record("Found matching facility, location and type, checking times") 
                 available_time = [None, None]
                 all_available_times = rows[2].find_elements(By.CSS_SELECTOR, "a.success")
                 for all_available_times_index in range(len(all_available_times)):
                     curr_available_time = all_available_times[all_available_times_index]                            
                     if soughttime in curr_available_time.text:
                         foundtime = curr_available_time
-                        record("Found a court available at " + facility + " at " + foundtime.text)
+                        record(facility+" available at " + foundtime.text)
                         break  # for availableTime_index in availableTimes:
+                if debug and not foundtime: 
+                    record(facility+" not available at "+soughttime); 
             if foundtime: 
                 return foundtime 
     except Exception as e:
-        error("Exception in searching table: "+str(e))
+        error("Exception in searching tableset: "+str(e))
     return False
 
-#
-# Save a screenshot for debugging
-#    
-def do_screenshot():
-    if debug:
-        my_date_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        my_file = my_debug_dir + my_date_time + '.png'
-        driver.save_full_page_screenshot(my_file)
-        record("Debug: screen shot saved as: "+my_file)
-    
 # 
-# log in as a user, and make a reservation, then log out
+# having found a suitable available time/court, log in as a user, and make a reservation, then log out
 # my_element: activeTime1 or activeTime2
 # my_handle: driver handle for this window
 #  
 def make_reservation(my_element, my_userid, my_password):
     
+    # click on the passed in element, to activate the reservation process
     my_element.click()
     
-    # enter data on the pop up that appears after clicking on a reservation time slot
-    
+    # enter data on the add-to-cart pop up that appears after clicking on a reservation time slot
     waitclick('/html/body/div[1]/div[2]/div/div/div/button[2]/span')
     
+    # after adding a reservation to the cart, we are obliged to log in
     usernameXPATH = '//*[@id="weblogin_username"]'
     passwordXPATH = '//*[@id="weblogin_password"]'
     loginButtonXPATH = '//*[@id="weblogin_buttonlogin"]'
@@ -410,81 +442,57 @@ def make_reservation(my_element, my_userid, my_password):
         waitelement(item[0]).send_keys(item[1])
         time.sleep(secs)
         
-    # satisfy the remaining prompts
+    # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 
-    # question1XPATH = '//*[@id="question3756474_vm_1_button"]'
+    # Event Type: Tennis Court Reservations
+    # Activate Event Type drop-down
     waitclick('/html/body/div/div/div/div/form/div[1]/div[1]/div[1]/div[1]/div[1]/div/button/span')
     
-    # it is a tennis court reservation
+    # Click on tennis court reservation
     waitclick('/html/body/div/div/div/div/form/div[1]/div[1]/div[1]/div[1]/div[1]/div/div/ul/li[2]/span')
  
-    # click on question 2
+    # Reservation Purpose
+    # Activate Reservation Purpose drop-down
     waitclick('//*[@id="question4791204_vm_2_button"]')
      
-    # it is Pickleball
+    # Select Pickleball
     waitclick('/html/body/div/div/div/div/form/div[1]/div[1]/div[1]/div[2]/div[1]/div/div/ul/li[4]/span')
 
-    # Continue button
+    # Click Continue button
     waitclickw('//*[@id="processingprompts_buttoncontinue"]')
 
-    # Proceed to checkout
+    # Now we are on the final Shopping Cart page, reviewing our purchases, and ready to proceed to checkout
+    # Activate the Proceed to checkout button
     waitclickw('//*[@id="webcart_buttoncheckout"]')
 
-    # Checkout "payment" unless dry run
+    # On the Checkout page, where we accept the charge of $0.
+    # We accept the payment and proceed, unless this is a dry run
     if dryrun: 
         if debug: 
             record("Dry run: Reservation was not actually made")
 #            if verbose: 
 #                do_screenshot()
         # since we aren't really making a reservation, we have to empty the cart and log out.         
-        # go back to cart
+        # So first go back to the shopping cart page by activating that button
         waitclickw('//*[@id="webcheckout_buttonback"]')
         # empty the cart
         waitclickw('//*[@id="webcart_buttonemptycart"]')
-        # show the my account menu, to expose the logout button
+        # show the my account menu in the page header, to expose the logout button
         waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
         # click logout button
         waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
     else:
-        # continue button
+        # Activate the Continue button on the Checkout page, to complete our purchase
         waitclickw('//*[@id="webcheckout_buttoncontinue"]')
         if debug:
             print("Made a reservation as user "+my_userid) 
  #           if verbose: 
  #               do_screenshot()
-        # logout button
+
+        # And now activate the logout button which is presented
         waitclickw('//*[@id="webconfirmation_buttonlogout"]')
 
     return
-
-def sendemail(recipients,subject,body):
-    msg = EmailMessage()
-    msg['Subject'] = subject
-    msg['To'] = recipients
-    msg['From'] = "picklemaster"
-    msg.set_content(body)
-    s = smtplib.SMTP('localhost')
-    s.send_message(msg)
-    s.quit()
-
-def sendresultemail(subject):
-    picklelogger.close()
-    body = ""
-    with open("picklejuice.log") as fp:
-        str = fp.read()
-        print("L:"+str)
-        body += str + "\n"
-    sendemail(email_recipients,subject,body)
-
-def sendtext(body):
-    sendemail(text_recipients,'Picklemaster says:',body)
-        
-def error(body):
-    record(body)
-    sendresultemail("Reservation Error")
-    sendtext("Reservation Error")
-    driver.quit()    # FIX ME
-    sys.exit(body)
 
 #
 # mainline code begins here
@@ -582,21 +590,22 @@ reservation_time = desired_times[0].split("-")[0].rstrip() # first time on earli
 # need to know if we have to make more than one reservation, parse the session id
 SessionParts = session.split('.');
 
-Duration = int(SessionParts[0])/10
+# the duration is kept as an integer 10, 15, 20, 25, 30, for 1.0, 1.5, 2.0, 2.5, 3.0 hours 
+Duration = int(SessionParts[0])
 
 # A duration longer than 1.5 hours requires two reservations
-if Duration > 1.5:
+if Duration > 15:
     nReservations = 2
 
-# more useful to have the duration as a string
-Duration = str(Duration)
+# String version of the duration as hours
+sDuration = str(Duration/10)
 
 # this is to add "dry run" to the message, if appropriate
 drs=""
 if dryrun:
     drs=" (dry run)"
 
-reservemessage = 'Reserving '+str(nReservations)+' court slots for: '+str(month)+'/'+str(day)+" for "+Duration+" hours, times: "+str(desired_times)+drs 
+reservemessage = 'Reserving '+str(nReservations)+' court slots for: '+str(month)+'/'+str(day)+" for "+sDuration+" hours, times: "+str(desired_times)+drs 
 record(reservemessage)
 sendtext(reservemessage)
 
@@ -653,23 +662,24 @@ try:
 
     if nReservations > 1:                                 
         driver.switch_to.window(handles[1])
-        tables[1] = fetch_tables(day, month, reservation_time)
+        tables[1] = fetch_tableset(day, month, reservation_time)
         driver.switch_to.window(handles[0])
             
-    tables[0] = fetch_tables(day, month, reservation_time)
+    tables[0] = fetch_tableset(day, month, reservation_time)
     
     # now trying to find a court with availability at the desired time(s)
     first_time = second_time = None
 
     # check against each of the preferences we were give for a court and type at the indicated time 
     for p in range(len(court_prefs)):
-        available_time[0] = search_atable(tables[0],court_prefs[p],desired_times[0])
+        available_time[0] = search_tableset(tables[0],court_prefs[p],desired_times[0])
         if available_time[0]: 
             first_time = available_time[0].text
             if nReservations >1:
                 driver.switch_to.window(handles[1])
-                available_time[1] = search_atable(tables[1],court_prefs[p],desired_times[1])
-                second_time = available_time[1].text
+                available_time[1] = search_tableset(tables[1],court_prefs[p],desired_times[1])
+                if available_time[1]:
+                    second_time = available_time[1].text
                 driver.switch_to.window(handles[0])
         if first_time and second_time: 
             break #for loop over possible prefs

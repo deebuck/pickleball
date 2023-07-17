@@ -392,11 +392,11 @@ def fetch_tableset(myday, mymonth, myreservation_time):
 # tableset is the tableset returned from fetch_tableset
 # soughttime is a string time specification 
 #
-def search_tableset(tableset,preference,soughttime): 
+def search_tableset(tableset,court,soughttime): 
     foundtime = False  
-    location = preference["location"]
-    type = preference["type"]
-    facility = preference["facility"]
+    location = court["location"]
+    type = court["type"]
+    facility = court["facility"]
     if debug: 
         record ("Checking "+facility)   
     try: 
@@ -473,9 +473,9 @@ def make_reservation(my_element, my_userid, my_password):
 #            if verbose: 
 #                do_screenshot()
         # since we aren't really making a reservation, we have to empty the cart and log out.         
-        # So first go back to the shopping cart page by activating that button
+        # So first go back to the shopping cart page by activating the back button
         waitclickw('//*[@id="webcheckout_buttonback"]')
-        # empty the cart
+        # empty the cart, using the button provided for that
         waitclickw('//*[@id="webcart_buttonemptycart"]')
         # show the my account menu in the page header, to expose the logout button
         waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
@@ -541,24 +541,25 @@ if debug:
             sargs = sargs + a + ":" + str(args.__dict__[a]) + ",";
     record('Attempting court reservation:\n'+sargs)
 else:
-    email_recipients = "dee@wmbuck.net, lsalak@verizon.net, abrao.grynglas@gmail.com, david@salaks.net"
+    email_recipients = "dee@wmbuck.net, lsalak@verizon.net"
     text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com" # dee liz
 
-# built desired_times dictionary
+# build desired_times dictionary
 desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
 
 # check if this is a dry run. Do this before we decide whether to sleep
 if dryrun: 
     record("This is a dry run")
 else: 
-    record("This is a live run, and will make a reservation")
+    if verbose: 
+        record("This is a live run and will make a reservation")
 
 #
 # this code attempts to make all time calculations in terms 
 # of time in Falls Church
 # 
 # In immediate mode the reservation will be made for tomorrow
-# Otherwise (the normal mode) we wait till midnight tonight, and will then reserve for the "new" tomorrow
+# Otherwise (the normal mode) we wait till midnight tonight, and then attempt to reserve for the "new" tomorrow
 #
 FallsChurchtz = ZoneInfo("America/New_York")
 now = datetime.now(FallsChurchtz)
@@ -585,7 +586,7 @@ sleeptime = (midnight-now).total_seconds()+midnight_delay
 # figure out what time she wants to play pickleball
 
 desired_times = desired_times_dict[session]
-reservation_time = desired_times[0].split("-")[0].rstrip() # first time on earliest desired time
+reservation_time = desired_times[0].split("-")[0].rstrip() # begin time on earliest desired timeslot
 
 # need to know if we have to make more than one reservation, parse the session id
 SessionParts = session.split('.');
@@ -610,14 +611,14 @@ record(reservemessage)
 sendtext(reservemessage)
 
 if not(immediate):
-    record("Time is now "+str(now)+" Falls Church time. Sleeping for "+str(sleeptime)+" seconds, until midnight, Falls Church time.");
+    record("Time is "+str(now.strftime('%I;%M:%S%p'))+" Falls Church time. Sleeping for "+str(sleeptime)+" seconds, until midnight, Falls Church time.");
     time.sleep(sleeptime)
     now = datetime.now(FallsChurchtz)
     tomorrow = now+timedelta(days=1)
     if verbose: 
-        record("Awoke feeling refreshed, let's get to work! Time is now "+str(now)+" Falls Church time, tomorrow is "+str(tomorrow))
+        record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time, tomorrow is "+str(tomorrow.strftime('%a, %m/%d/%Y')))
 else:
-    record("Time is now "+str(now)+" Falls Church time. Immediate is set, so not sleeping.")
+    record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time. Immediate is set, so not sleeping.")
 
 # now set up to bring up some web pages to scrape
 options = Options()
@@ -672,7 +673,8 @@ try:
 
     # check against each of the preferences we were give for a court and type at the indicated time 
     for p in range(len(court_prefs)):
-        available_time[0] = search_tableset(tables[0],court_prefs[p],desired_times[0])
+        court = court_prefs[p]; 
+        available_time[0] = search_tableset(tables[0],court,desired_times[0])
         if available_time[0]: 
             first_time = available_time[0].text
             if nReservations >1:
@@ -690,22 +692,24 @@ try:
     if nReservations > 1 and not(second_time):
         error("Could not find the second required court time")
 
-    record("Will make a reservation for "+first_time)
+    record("Making a reservation for "+first_time+" at "+court['facility'])
     if nReservations > 1:
-        record("Will make a second reservation for "+second_time)
+        record("Making a second reservation for "+second_time+", also at "+court['facility'])
 except Exception as e:
     error("Exception during table search stage:"+str(e))
 
 ### code to make the resevations:
 
-record("Trying to make reservation(s)") 
+if verbose: 
+    record("Trying to make reservation(s)") 
 try:
     make_reservation(available_time[0], usernames[0], passwords[0])
 except Exception as e:
     error("Looks like Liz already has a reservation pending")
 
 if nReservations > 1:
-    record("Trying to make a second reservation") 
+    if verbose: 
+        record("Trying to make a second reservation") 
     driver.switch_to.window(handles[1])
     try: 
         make_reservation(available_time[1], usernames[1], passwords[1])

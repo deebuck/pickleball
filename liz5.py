@@ -611,7 +611,7 @@ record(reservemessage)
 sendtext(reservemessage)
 
 if not(immediate):
-    record("Time is "+str(now.strftime('%I;%M:%S%p'))+" Falls Church time. Sleeping for "+str(sleeptime)+" seconds, until midnight, Falls Church time.");
+    record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time. Sleeping until midnight.");
     time.sleep(sleeptime)
     now = datetime.now(FallsChurchtz)
     tomorrow = now+timedelta(days=1)

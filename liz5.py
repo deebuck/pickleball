@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 
 import tzdata
 
+import random import randrange
 
 from selenium import webdriver
 
@@ -65,7 +66,8 @@ preference = None # a string with court preferences
 logfile = None  # Log file
 
 secs = 0.5 # time to sleep so that we can see the pages changing
-midnight_delay = 30.0  # delay after midnight before we start trying to reserve
+#midnight_delay = 30.0  # delay after midnight before we start trying to reserve
+midnight_delay = randrange(20,240)
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
 
@@ -426,11 +428,21 @@ def search_tableset(tableset,court,soughttime):
 # my_element: activeTime1 or activeTime2
 # my_handle: driver handle for this window
 #  
-def make_reservation(my_element, my_userid, my_password):
-    
+#def make_reservation(my_element, my_userid, my_password):
+def make_reservation(my_element):
+
     # click on the passed in element, to activate the reservation process
     my_element.click()
     
+    # select a user to make this reservation, then remove it from the list
+    userindex=randrange(0,len(usernames)-1)
+    my_userid=usernames[userindex]
+    my_password=passwords[userindex]
+    usernames.remove(my_userid)
+    passwords.remove(my_password)
+    if debug:
+        record ("Making reservation as "+my_userid)
+
     # enter data on the add-to-cart pop up that appears after clicking on a reservation time slot
     waitclick('/html/body/div[1]/div[2]/div/div/div/button[2]/span')
     
@@ -703,7 +715,8 @@ except Exception as e:
 if verbose: 
     record("Trying to make reservation(s)") 
 try:
-    make_reservation(available_time[0], usernames[0], passwords[0])
+#    make_reservation(available_time[0], usernames[0], passwords[0])
+    make_reservation(available_time[0])
 except Exception as e:
     error("Looks like Liz already has a reservation pending")
 
@@ -712,7 +725,8 @@ if nReservations > 1:
         record("Trying to make a second reservation") 
     driver.switch_to.window(handles[1])
     try: 
-        make_reservation(available_time[1], usernames[1], passwords[1])
+#        make_reservation(available_time[1], usernames[1], passwords[1])
+        make_reservation(available_time[1])
     except Exception as e:
         error("Looks like Sue already has a reservation pending")
  

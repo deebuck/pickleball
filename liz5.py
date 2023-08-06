@@ -721,7 +721,7 @@ try:
 #    make_reservation(available_time[0], userids[0], passwords[0])
     make_reservation(available_time[0])
 except Exception as e:
-    error("Looks like Liz already has a reservation pending")
+    error("Failed: does user already have a reservation pending?")
 
 if nReservations > 1:
     if verbose: 
@@ -731,7 +731,7 @@ if nReservations > 1:
 #        make_reservation(available_time[1], userids[1], passwords[1])
         make_reservation(available_time[1])
     except Exception as e:
-        error("Looks like Sue already has a reservation pending")
+        error("Failed: does user already have a reservation pending?")
  
 record("Reservation process was successful")
 

@@ -82,9 +82,9 @@ nReservations = 1 # whether to make 1 or 2 reservations
 court_type = 'Pickleball' # court_name = 'Cherry Street Court #1' 
 
 # if we make 2 reservations they have to be made by different users
-usernames = ['Liz', 'Sue', 'Jasper', 'Gazornenplatz']
-userids = ['8158', '24270', '1234', '5678']
-passwords = ['C0rn1ch0n3!', '24270', 'ding', 'bat']
+usernames = ['Liz', 'Sue']
+userids = ['8158', '24270']
+passwords = ['C0rn1ch0n3!', '24270']
 
 # the dates are now computed, and these values initialized there 
 month = None

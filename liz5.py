@@ -28,7 +28,7 @@ from zoneinfo import ZoneInfo
 
 import tzdata
 
-import random import randrange
+from random import randrange
 
 from selenium import webdriver
 

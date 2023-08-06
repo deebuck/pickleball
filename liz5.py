@@ -82,8 +82,9 @@ nReservations = 1 # whether to make 1 or 2 reservations
 court_type = 'Pickleball' # court_name = 'Cherry Street Court #1' 
 
 # if we make 2 reservations they have to be made by different users
-usernames = ['8158', '24270']
-passwords = ['C0rn1ch0n3!', '24270']
+usernames = ['Liz', 'Sue', 'Jasper', 'Gazornenplatz']
+userids = ['8158', '24270', '1234', '5678']
+passwords = ['C0rn1ch0n3!', '24270', 'ding', 'bat']
 
 # the dates are now computed, and these values initialized there 
 month = None
@@ -435,13 +436,15 @@ def make_reservation(my_element):
     my_element.click()
     
     # select a user to make this reservation, then remove it from the list
-    userindex=randrange(0,len(usernames)-1)
-    my_userid=usernames[userindex]
+    userindex=randrange(0,len(userids)-1)
+    my_userid=userids[userindex]
+    my_username=usernames[userindex]
     my_password=passwords[userindex]
-    usernames.remove(my_userid)
+    userids.remove(my_userid)
+    usernames.remove(my_username)
     passwords.remove(my_password)
     if debug:
-        record ("Making reservation as "+my_userid)
+        record ("Making reservation as "+my_username)
 
     # enter data on the add-to-cart pop up that appears after clicking on a reservation time slot
     waitclick('/html/body/div[1]/div[2]/div/div/div/button[2]/span')
@@ -497,7 +500,7 @@ def make_reservation(my_element):
         # Activate the Continue button on the Checkout page, to complete our purchase
         waitclickw('//*[@id="webcheckout_buttoncontinue"]')
         if debug:
-            print("Made a reservation as user "+my_userid) 
+            print("Made a reservation as user "+my_username+" ("+my_userid+")") 
  #           if verbose: 
  #               do_screenshot()
 
@@ -715,7 +718,7 @@ except Exception as e:
 if verbose: 
     record("Trying to make reservation(s)") 
 try:
-#    make_reservation(available_time[0], usernames[0], passwords[0])
+#    make_reservation(available_time[0], userids[0], passwords[0])
     make_reservation(available_time[0])
 except Exception as e:
     error("Looks like Liz already has a reservation pending")
@@ -725,7 +728,7 @@ if nReservations > 1:
         record("Trying to make a second reservation") 
     driver.switch_to.window(handles[1])
     try: 
-#        make_reservation(available_time[1], usernames[1], passwords[1])
+#        make_reservation(available_time[1], userids[1], passwords[1])
         make_reservation(available_time[1])
     except Exception as e:
         error("Looks like Sue already has a reservation pending")

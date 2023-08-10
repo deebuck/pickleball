@@ -30,6 +30,8 @@ import tzdata
 
 from random import randrange
 
+from pprint import pprint
+
 from selenium import webdriver
 
 from selenium.webdriver import Firefox
@@ -82,9 +84,9 @@ nReservations = 1 # whether to make 1 or 2 reservations
 court_type = 'Pickleball' # court_name = 'Cherry Street Court #1' 
 
 # if we make 2 reservations they have to be made by different users
-usernames = ['Liz', 'Sue']
-userids = ['8158', '24270']
-passwords = ['C0rn1ch0n3!', '24270']
+usernames = ['Liz', 'Sue', 'Brenda']
+userids = ['8158', '24270', '20388']
+passwords = ['C0rn1ch0n3!', '24270', 'Extracheese25!']
 
 # the dates are now computed, and these values initialized there 
 month = None
@@ -368,8 +370,11 @@ def fetch_tableset(myday, mymonth, myreservation_time):
 
     # The newer version clicks the select boxes for both Cavalier and Cherry. This is kludgy and fragile. 
     # It would be better to check the li's and look for the courts we want
-    clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[1]')
-    clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[4]')
+    locationdropdown = findelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul')
+    #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[1]')
+    #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[4]')
+    clickelementbyCSS("li[data-value='NCHER']")
+    clickelementbyCSS("li[data-value='CAVAL']")
     
     # click on Max Available Blocks to Display to show the drop down, then activate the drop-down
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[4]/label/span')
@@ -389,6 +394,23 @@ def fetch_tableset(myday, mymonth, myreservation_time):
     # dump_tableset(tables)
 
     return tableset
+
+def choose_user(): 
+    if debug: 
+        record("Userids: " + " ".join(str(x) for x in userids))
+        record("Usernames: " + " ".join(str(x) for x in usernames))
+
+    # select a user under whose account we will make a reservation, then remove it from the list
+    # Counter-intuitively, have to specify the range as 0 - #of users, rather than 0 - #users-1. 
+    #
+    userindex = randrange(0,len(userids))
+    user = {"userid":userids[userindex],"username":usernames[userindex],"password":passwords[userindex]}
+    userids.remove(user["userid"])
+    usernames.remove(user["username"])
+    passwords.remove(user["password"])
+    if debug:
+        record ( "Chose user " + user["username"] + "(" + str(userindex) + ")" )
+    return user
 
 #
 # Search an available times tableset (returned by fetch_tableset) looking for a specific desired time
@@ -430,21 +452,15 @@ def search_tableset(tableset,court,soughttime):
 # my_handle: driver handle for this window
 #  
 #def make_reservation(my_element, my_userid, my_password):
-def make_reservation(my_element):
+def make_reservation(my_element,user):
 
     # click on the passed in element, to activate the reservation process
     my_element.click()
     
-    # select a user to make this reservation, then remove it from the list
-    userindex=randrange(0,len(userids)-1)
-    my_userid=userids[userindex]
-    my_username=usernames[userindex]
-    my_password=passwords[userindex]
-    userids.remove(my_userid)
-    usernames.remove(my_username)
-    passwords.remove(my_password)
-    if debug:
-        record ("Making reservation as "+my_username)
+    # obtain the user info
+    my_userid=user["userid"]
+    my_username=user["username"]
+    my_password=user["password"]
 
     # enter data on the add-to-cart pop up that appears after clicking on a reservation time slot
     waitclick('/html/body/div[1]/div[2]/div/div/div/button[2]/span')
@@ -456,7 +472,13 @@ def make_reservation(my_element):
     for item in [[usernameXPATH, my_userid], [passwordXPATH, my_password], [loginButtonXPATH, Keys.ENTER]]:
         waitelement(item[0]).send_keys(item[1])
         time.sleep(secs)
-        
+    if debug:
+        record("Logged in successfully as "+my_userid)
+
+    #waitelement("/html/body")
+    #if findelementbyCSS("body[data-view='websessionalert']"):
+    #    error(user["username"] + " seems to be logged on.")
+    
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 
     # Event Type: Tennis Court Reservations
@@ -715,23 +737,23 @@ except Exception as e:
 
 ### code to make the resevations:
 
-if verbose: 
-    record("Trying to make reservation(s)") 
 try:
-#    make_reservation(available_time[0], userids[0], passwords[0])
-    make_reservation(available_time[0])
+    user = choose_user()
+    if verbose: 
+        record("Trying to make reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
+    make_reservation(available_time[0],user)
 except Exception as e:
-    error("Failed: does user already have a reservation pending?")
+    error("Failed! Does " + user["username"] + " already have a reservation pending?")
 
 if nReservations > 1:
-    if verbose: 
-        record("Trying to make a second reservation") 
     driver.switch_to.window(handles[1])
+    user = choose_user()
     try: 
-#        make_reservation(available_time[1], userids[1], passwords[1])
-        make_reservation(available_time[1])
+        if verbose: 
+            record("Trying to make a second reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
+        make_reservation(available_time[1],user)
     except Exception as e:
-        error("Failed: does user already have a reservation pending?")
+        error("Failed: does " + user["username"] + " already have a reservation pending?")
  
 record("Reservation process was successful")
 

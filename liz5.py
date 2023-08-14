@@ -62,11 +62,21 @@ immediate = False # do the look/reserve right away, don't wait for midnight
 court_name = None # "location": location at which to reserve 
 session = None    # the coded value stipulating court time and duration
 preference = None # a string with court preferences
+offset = 0        # delay after midnigh, to give a different pickle picker and advantage
 
 logfile = None  # Log file
 
-secs = 0.5 # time to sleep so that we can see the pages changing
-#midnight_delay = 30.0  # delay after midnight before we start trying to reserve
+secs = 0.4 # time to sleep between screens so that we can see the pages changing
+
+# midnight delay stuff
+# basically, we sleep until just after midnight, and then wake up and try to reserve a court.
+# two factors affect how soon after midnigh we will wake up. 
+# one, called midnight_delay, is a random number generated here between 20 and 240 seconds. 
+# the second, called offset, is a parameter which can be specified to the program at run time, 
+# and if non-zero is added to the delay. The purpose of this is to enable having a pickle run
+# on tarragon and another on oregano which runs as a "backup" (just in case). 
+# This is probably belt and braces. If something goes wrong one place, it may also go wrong in the other. 
+
 midnight_delay = randrange(20,240)
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
@@ -547,6 +557,7 @@ try:
     parser.add_argument("-d", "--dry-run",help="Dry run, don't make a reservation",dest="Dryrun",action="store_true")
     parser.add_argument("-x", "--width",help="Window width unless headless",dest="Width",action="store")
     parser.add_argument("-y", "--height",help="Window height unless headless",dest="Height",action="store")
+    parser.add_argument("-o", "--offset",help="Extra offset delay after midnight",dest="Offset",action="store")
     args = parser.parse_args();
 except Exception as e:
     error("Exception parsing arguments")
@@ -559,6 +570,7 @@ width = args.Width
 height = args.Height
 session = args.Session
 dryrun = args.Dryrun
+offset = args.Offset
 
 # Process the incoming shorthand preference request, and turn it into the full specification 
 # that will show up in the tables. 
@@ -609,14 +621,30 @@ month = reservedate.month
 day = reservedate.day
 
 # 
-# We experienced an odd failure, which I interpret as some kind of reset occurring on their 
+# About the delay after midnight. 
+#
+# We experienced an odd failure, which I interpret as some kind of reset occurring on the city 
 # website immediately after midnight. This wouldn't surprise me. At the website end they have  
 # to somehow accommodate a change in the data availability, and this could be accompanied by
 # a reset of the web server, which could reset all the http connections. 
+# So, there is an automatic delay to be sure we don't wake up until at least 20 seconds past midnight,
+# so that whatever shenanigans are going on can settle. 
+# A second factor in picking the delay is a pseudo random number between that 20 seconds, and 
+# 4 minutes (240 seconds), which is intended to ensure our pickle picking looks like a human being
+# rather than a robot.  
+# Finally, I have added a parameter "offset" which can be passed into the program at run time 
+# with the -o or --offset flag, which, if non-zero, adds "n" 5 minute (300 second) delays. So if 
+# offset = 1, we add 300 seconds. If offset = 2 we hadd 600 seconds.  
+# The intention is that during the development/debugging stage, when court picking has sometimes been
+# sporadically unreliable, we can have a backup pickle-picker on another machine, with a delay, as 
+# a backup in case the first one fails. 
 #
-# I'm now adding a delay to be sure we don't wake up until well past midnight
-#
-sleeptime = (midnight-now).total_seconds()+midnight_delay
+if offset: 
+    if offset > 12:
+        offset = 12
+    offset = offset*300
+
+sleeptime = (midnight-now).total_seconds()+midnight_delay+offset
 
 # figure out what time she wants to play pickleball
 

@@ -644,8 +644,12 @@ if offset:
     if offset > 12:
         offset = 12
     offset = offset*300
+    midnight_delay += offset
+    if debug: 
+        record("Offset will be "+str(offset)+". Midnight delay="+str(midnight_delay)+".")
+    
 
-sleeptime = (midnight-now).total_seconds()+midnight_delay+offset
+sleeptime = (midnight-now).total_seconds()+midnight_delay
 
 # figure out what time she wants to play pickleball
 

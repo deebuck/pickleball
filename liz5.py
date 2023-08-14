@@ -543,7 +543,7 @@ def make_reservation(my_element,user):
 # mainline code begins here
 #
 
-picklelogger = open("picklejuice.log","w")
+picklelogger = open("/tmp/picklejuice.log","w")
 
 # first parse the arguments
 try:

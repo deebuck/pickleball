@@ -663,7 +663,7 @@ else:
     options.add_argument('--width='+width)
     options.add_argument('--height='+height)
 
-service = Service(log_path=os.path.devnull)
+service = Service(log_output=os.path.devnull)
 
 driver = webdriver.Firefox(options=options, service=service)
  

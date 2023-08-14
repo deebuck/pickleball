@@ -640,6 +640,7 @@ day = reservedate.day
 # a backup in case the first one fails. 
 #
 if offset: 
+    offset = int(offset)
     if offset > 12:
         offset = 12
     offset = offset*300

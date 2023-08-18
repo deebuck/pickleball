@@ -589,7 +589,7 @@ if debug:
     record('Attempting court reservation:\n'+sargs)
 else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net"
-    text_recipients = "3037751709@tmomail.net, 7038629558@txt.att.net"
+    text_recipients = "3037751709@tmomail.net, 7038629558@myboostmobile.com"
 
 #        7039738520@vtext.com" # dee liz
 

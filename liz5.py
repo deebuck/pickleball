@@ -63,10 +63,9 @@ court_name = None # "location": location at which to reserve
 session = None    # the coded value stipulating court time and duration
 preference = None # a string with court preferences
 offset = 0        # delay after midnigh, to give a different pickle picker and advantage
-
-logfile = None  # Log file
-
-secs = 0.4 # time to sleep between screens so that we can see the pages changing
+hostname = os.uname[1] # where am I running
+logfile = None    # Log file
+secs = 0.4        # time to sleep between screens so that we can see the pages changing
 
 # midnight delay stuff
 # basically, we sleep until just after midnight, and then wake up and try to reserve a court.
@@ -287,7 +286,7 @@ def sendemail(recipients,subject,body):
     s.quit()
 
 def sendtext(body):
-    sendemail(text_recipients,'Picklemaster says:',body)
+    sendemail(text_recipients,'Pickletext:',body)
         
 def sendresultemail(subject):
     picklelogger.close()
@@ -543,7 +542,14 @@ def make_reservation(my_element,user):
 # mainline code begins here
 #
 
-picklelogger = open("/tmp/picklejuice.log","w")
+#
+# this code attempts to make all time calculations in terms 
+# of time in Falls Church
+FallsChurchtz = ZoneInfo("America/New_York")
+now = datetime.now(FallsChurchtz)
+
+picklelogger = open("/tmp/picklejuice.log","a")
+picklelogger.write("----- "+str(now.strftime('%I:%M:%S%p'))+'\n')
 
 # first parse the arguments
 try:
@@ -572,8 +578,7 @@ session = args.Session
 dryrun = args.Dryrun
 offset = args.Offset
 
-# Process the incoming shorthand preference request, and turn it into the full specification 
-# that will show up in the tables. 
+# Process the incoming court-time preference 
 court_prefs = []
 for p in range(len(args.Preferences)):
     pref = preferences[args.Preferences[p]]
@@ -586,7 +591,7 @@ if debug:
     for a in args.__dict__:
         if args.__dict__[a] is not None:
             sargs = sargs + a + ":" + str(args.__dict__[a]) + ",";
-    record('Attempting court reservation:\n'+sargs)
+    record('Attempting court reservation on '+hostname+':\n'+sargs)
 else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net"
     text_recipients = "3037751709@tmomail.net, 7038629558@myboostmobile.com"
@@ -601,17 +606,12 @@ if dryrun:
     record("This is a dry run")
 else: 
     if verbose: 
-        record("This is a live run and will make a reservation")
+        record("This is a live run and will try to make a real reservation")
 
-#
-# this code attempts to make all time calculations in terms 
-# of time in Falls Church
 # 
 # In immediate mode the reservation will be made for tomorrow
 # Otherwise (the normal mode) we wait till midnight tonight, and then attempt to reserve for the "new" tomorrow
 #
-FallsChurchtz = ZoneInfo("America/New_York")
-now = datetime.now(FallsChurchtz)
 tomorrow = now+timedelta(days=1); 
 midnight = datetime(tomorrow.year,tomorrow.month,tomorrow.day,0,0,0,0,FallsChurchtz)
 #
@@ -631,7 +631,7 @@ day = reservedate.day
 # a reset of the web server, which could reset all the http connections. 
 # So, there is an automatic delay to be sure we don't wake up until at least 20 seconds past midnight,
 # so that whatever shenanigans are going on can settle. 
-# A second factor in picking the delay is a pseudo random number between that 20 seconds, and 
+# A second factor in picking the delay is a pseudo random number between that 20 seconds and 
 # 4 minutes (240 seconds), which is intended to ensure our pickle picking looks like a human being
 # rather than a robot.  
 # Finally, I have added a parameter "offset" which can be passed into the program at run time 

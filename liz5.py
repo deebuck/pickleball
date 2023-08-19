@@ -63,7 +63,7 @@ court_name = None # "location": location at which to reserve
 session = None    # the coded value stipulating court time and duration
 preference = None # a string with court preferences
 offset = 0        # delay after midnigh, to give a different pickle picker and advantage
-hostname = os.uname[1] # where am I running
+hostname = os.uname() [1] # where am I running
 logfile = None    # Log file
 secs = 0.4        # time to sleep between screens so that we can see the pages changing
 
@@ -591,7 +591,7 @@ if debug:
     for a in args.__dict__:
         if args.__dict__[a] is not None:
             sargs = sargs + a + ":" + str(args.__dict__[a]) + ",";
-    record('Attempting court reservation on '+hostname+':\n'+sargs)
+    record('Attempting court reservation on '+str(hostname)+':\n'+sargs)
 else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net"
     text_recipients = "3037751709@tmomail.net, 7038629558@myboostmobile.com"
@@ -603,10 +603,10 @@ desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
 
 # check if this is a dry run. Do this before we decide whether to sleep
 if dryrun: 
-    record("This is a dry run")
+    record("This is a dry run on "+str(hostname))
 else: 
     if verbose: 
-        record("This is a live run and will try to make a real reservation")
+        record("This is a live run on "+str(hostname)+" and will try to make a real reservation")
 
 # 
 # In immediate mode the reservation will be made for tomorrow

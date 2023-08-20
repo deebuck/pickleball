@@ -569,8 +569,6 @@ def make_reservation(my_element,user):
         waitclickw('//*[@id="webcheckout_buttoncontinue"]')
         if debug:
             print("Made a reservation as user "+my_username+" ("+my_userid+")") 
- #           if verbose: 
- #               do_screenshot()
 
         # And now activate the logout button which is presented
         waitclickw('//*[@id="webconfirmation_buttonlogout"]')
@@ -644,8 +642,7 @@ desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
 if dryrun: 
     record("This is a dry run on "+str(hostname))
 else: 
-    if verbose: 
-        record("This is a live run on "+str(hostname)+" and will try to make a real reservation")
+    record("This is a live run on "+str(hostname)+" and will try to make a real reservation")
 
 # 
 # In immediate mode the reservation will be made for tomorrow
@@ -724,8 +721,7 @@ if not(immediate):
     time.sleep(sleeptime)
     now = datetime.now(FallsChurchtz)
     tomorrow = now+timedelta(days=1)
-    if verbose: 
-        record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time, tomorrow is "+str(tomorrow.strftime('%a, %m/%d/%Y')))
+    record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time, tomorrow is "+str(tomorrow.strftime('%a, %m/%d/%Y')))
 else:
     record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time. Immediate is set, so not sleeping.")
 
@@ -811,8 +807,7 @@ except Exception as e:
 
 try:
     user = choose_user()
-    if verbose: 
-        record("Trying to make reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
+    record("Trying to make reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
     make_reservation(available_time[0],user)
 except Exception as e:
     # logout()
@@ -822,8 +817,7 @@ if nReservations > 1:
     driver.switch_to.window(handles[1])
     user = choose_user()
     try: 
-        if verbose: 
-            record("Trying to make a second reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
+        record("Trying to make a second reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
         make_reservation(available_time[1],user)
     except Exception as e:
         # logout()

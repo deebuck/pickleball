@@ -828,8 +828,11 @@ if nReservations > 1:
     except Exception as e:
         # logout()
         error("Failed: See screenshot.",True)
- 
-sendresult("Reservation was successful")
+
+if dryrun: 
+    sendresult("(Dryrun) Reservation run was successful",False)
+else:
+    sendresult("Reservation was successful",False)
 
 ##### cleanup
 

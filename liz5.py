@@ -753,8 +753,12 @@ try:
     while to < 3 and not found:
         try:
             found = waitelement('/html/body/div/div/div/div/div[2]/section/div/a[5]')
-        except TimeoutError:
+        except Exception as e1:
             to += 1
+            record("Exception " + str(e1) +" on startup" )
+
+    if not found:
+        error("Failed to correctly load the initial page",True)
 
     if nReservations > 1:
         script = "window.open(" + '"' + web_site + '"' + ")"
@@ -762,10 +766,11 @@ try:
         time.sleep(secs)
 
     handles = driver.window_handles
-    driver.switch_to.window(handles[0])
-    
+     
     if len(handles) > 2:
         error("Too many handles",False)
+
+    driver.switch_to.window(handles[0])
 
     if nReservations > 1:                                 
         driver.switch_to.window(handles[1])

@@ -485,7 +485,7 @@ def make_reservation(my_element,user):
     #waitelement("/html/body")
     #if findelementbyCSS("body[data-view='websessionalert']"):
     #    error(user["username"] + " seems to be logged on.")
-    
+
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 
     # Event Type: Tennis Court Reservations

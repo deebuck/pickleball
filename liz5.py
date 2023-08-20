@@ -292,6 +292,8 @@ def sendemail(recipients,subject,body):
     s.send_message(msg)
     s.quit()
 
+# used to send a screenshot. To use for anything else, probably 
+# need to parameterize the filetype. This assumes jpg
 def sendemailwithattachment(recipients,subject,body,filename):
     msg = email.mime.multipart.MIMEMultipart()
     msg['Subject'] = subject
@@ -308,7 +310,7 @@ def sendemailwithattachment(recipients,subject,body,filename):
     s.send_message(msg)
     s.quit()
 
-def sendtext(body):
+def sendsms(body):
     sendemail(text_recipients,'Pickletext:',body)
         
 def getpicklejuice():
@@ -319,19 +321,18 @@ def getpicklejuice():
         juice += str + "\n"
     return juice
 
-def senderroremail(subject,screenshot):
-    body=getpicklejuice()
-    sendemailwithattachment(email_recipients,subject,body,screenshot)
+def sendresult(subject,send_screenshot):
+     juice=getpicklejuice()
+     if send_screenshot:
+        screenshot=do_screenshot()
+        sendemailwithattachment(email_recipients,subject,juice,screenshot)
+     else:
+        sendemail(email_recipients,subject,juice)
+     sendsms(subject)
 
-def sendresultemail(subject):
-     body=getpicklejuice()
-     sendemail(email_recipients,subject,body)
-
-def error(errormsg):
-    screenshot=do_screenshot()
+def error(errormsg,with_screenshot):
     record(errormsg)
-    senderroremail("Reservation Error",screenshot)
-    sendtext("Reservation Error")
+    sendresult("Reservation Error",with_screenshot)
     driver.quit()    # FIX ME
     sys.exit(errormsg)
 #
@@ -482,7 +483,7 @@ def search_tableset(tableset,court,soughttime):
             if foundtime: 
                 return foundtime 
     except Exception as e:
-        error("Exception in searching tableset: "+str(e))
+        error("Exception in searching tableset: "+str(e),True)
     return False
 
 def logout():
@@ -580,8 +581,8 @@ def make_reservation(my_element,user):
 #
 
 #
-# this code attempts to make all time calculations in terms 
-# of time in Falls Church
+# All time calculations are in Falls Church timezone
+#
 FallsChurchtz = ZoneInfo("America/New_York")
 now = datetime.now(FallsChurchtz)
 
@@ -603,7 +604,7 @@ try:
     parser.add_argument("-o", "--offset",help="Extra offset delay after midnight",dest="Offset",action="store")
     args = parser.parse_args();
 except Exception as e:
-    error("Exception parsing arguments")
+    error("Exception parsing arguments",False)
 
 debug = args.Debug
 verbose = args.Verbose
@@ -714,7 +715,6 @@ if dryrun:
 
 reservemessage = 'Reserving '+str(nReservations)+' court slots for: '+str(month)+'/'+str(day)+" for "+sDuration+" hours, times: "+str(desired_times)+drs 
 record(reservemessage)
-sendtext(reservemessage)
 
 if not(immediate):
     record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time. Sleeping until midnight plus "+str(midnight_delay)+" seconds.");
@@ -764,7 +764,7 @@ try:
     driver.switch_to.window(handles[0])
     
     if len(handles) > 2:
-        error("Too many handles")
+        error("Too many handles",False)
 
     if nReservations > 1:                                 
         driver.switch_to.window(handles[1])
@@ -792,16 +792,16 @@ try:
             break #for loop over possible prefs
 
     if not(first_time):
-        error("Could not find a time slot to reserve")
+        error("Could not find a time slot to reserve",False)
 
     if nReservations > 1 and not(second_time):
-        error("Could not find the second required court time")
+        error("Could not find the second required court time",False)
 
     record("Making a reservation for "+first_time+" at "+court['facility'])
     if nReservations > 1:
         record("Making a second reservation for "+second_time+", also at "+court['facility'])
 except Exception as e:
-    error("Exception during table search stage:"+str(e))
+    error("Exception during table search stage:"+str(e),True)
 
 ### code to make the resevations:
 
@@ -811,7 +811,7 @@ try:
     make_reservation(available_time[0],user)
 except Exception as e:
     # logout()
-    error("Failed! See screenshot.")
+    error("Failed! See screenshot.",True)
 
 if nReservations > 1:
     driver.switch_to.window(handles[1])
@@ -821,12 +821,10 @@ if nReservations > 1:
         make_reservation(available_time[1],user)
     except Exception as e:
         # logout()
-        error("Failed: See screenshot.")
+        error("Failed: See screenshot.",True)
  
-record("Reservation process was successful")
+sendresult("Reservation was successful")
 
-sendresultemail("Reservation was successful")
-sendtext("Reservation was successful")
 ##### cleanup
 
 driver.switch_to.window(handles[0])

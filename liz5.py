@@ -343,7 +343,7 @@ def do_screenshot():
     my_date_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     my_file = my_debug_dir + my_date_time + '.png'
     driver.save_full_page_screenshot(my_file)
-    record("Debug: screen shot saved as: "+my_file)
+    record("Screen shot saved as: "+my_file)
     return my_file
     
 # This was for debugging, it dumps out what times are available and/or unavailable in a table set 
@@ -487,9 +487,13 @@ def search_tableset(tableset,court,soughttime):
         error("Exception in searching tableset: "+str(e),True)
     return False
 
+# This was an attempt to perform a logout of the user if the program experiences an exception 
+# after logging someone in. The problem is that we don't know where we are. The idea was to 
+# get back to the main screen again, but this hasn't worked and isn't currently being used. 
 def logout():
     driver.get(web_site)
     WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
+    # this time delay was so I could explore the page before the program causes it to disappear from my screen
     time.sleep(200)
     # show the my account menu in the page header, to expose the logout button
     waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
@@ -497,11 +501,10 @@ def logout():
     waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
 
 # 
-# having found a suitable available time/court, log in as a user, and make a reservation, then log out
+# having found a suitable available time/court, log in as one of the users, and make a reservation, then log out
 # my_element: activeTime1 or activeTime2
 # my_handle: driver handle for this window
-#  
-#def make_reservation(my_element, my_userid, my_password):
+
 def make_reservation(my_element,user):
 
     # click on the passed in element, to activate the reservation process
@@ -633,9 +636,7 @@ if debug:
     record('Attempting court reservation on '+str(hostname)+':\n'+sargs)
 else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net"
-    text_recipients = "3037751709@tmomail.net, 7038629558@myboostmobile.com"
-
-#        7039738520@vtext.com" # dee liz
+    text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com, 7038629558@myboostmobile.com"
 
 # build desired_times dictionary
 desired_times_dict = dict(zip(desired_time_keys, desired_time_values))
@@ -844,5 +845,3 @@ if nReservations > 1:
     driver.close()
 
 driver.quit()
-
-

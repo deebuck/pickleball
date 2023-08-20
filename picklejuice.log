@@ -1,4 +1,0 @@
-Attempting court reservation:
-Arguments: Preferences:['CvT2', 'CvT2', 'ChT2', 'ChT2'],Session:30.1230,Debug:True,Verbose:True,Headless:True,Immediate:False,Dryrun:True,
-This is a dry run
-Reserving 2 court slots for: 8/8 for 3.0 hours, times: ['12:30 pm - 2:00 pm', '2:00 pm - 3:30 pm'] (dry run)

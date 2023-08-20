@@ -21,6 +21,11 @@ import math
 import argparse
 
 import smtplib
+import mimetypes
+import email
+import email.mime.application
+import email.mime.multipart
+import email.mime.text
 
 from datetime import datetime
 from datetime import timedelta
@@ -80,10 +85,12 @@ midnight_delay = randrange(20,240)
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
 
+# the log
+picklejuice = "/tmp/picklejuice.log"
 
 # screenshots are saved into a local directory in some debugging situations
 my_debug_dir = '/Users/abrao/Downloads/pickleball_'
-my_debug_dir = '/home/dee/Downloads/pickleball_'
+my_debug_dir = '/tmp/pickleball_'
 
 # man specified reservations require us to make 2 separate reservations
 nReservations = 1 # whether to make 1 or 2 reservations 
@@ -279,8 +286,24 @@ def sendemail(recipients,subject,body):
     msg = EmailMessage()
     msg['Subject'] = subject
     msg['To'] = recipients
-    msg['From'] = "picklemaster"
+    msg['From'] = "picklemachine"
     msg.set_content(body)
+    s = smtplib.SMTP('localhost')
+    s.send_message(msg)
+    s.quit()
+
+def sendemailwithattachment(recipients,subject,body,filename):
+    msg = email.mime.multipart.MIMEMultipart()
+    msg['Subject'] = subject
+    msg['To'] = recipients
+    msg['From'] = "picklemachine"
+    body = email.mime.text.MIMEText(body)
+    msg.attach(body)
+    f=open(filename,'rb')
+    attachment=email.mime.application.MIMEApplication(f.read(),_subtype="jpg")
+    f.close
+    attachment.add_header('Content-Disposition','attachment',filename=filename)
+    msg.attach(attachment)
     s = smtplib.SMTP('localhost')
     s.send_message(msg)
     s.quit()
@@ -288,29 +311,38 @@ def sendemail(recipients,subject,body):
 def sendtext(body):
     sendemail(text_recipients,'Pickletext:',body)
         
-def sendresultemail(subject):
+def getpicklejuice():
     picklelogger.close()
-    body = ""
-    with open("picklejuice.log") as fp:
+    juice = ""
+    with open(picklejuice) as fp:
         str = fp.read()
-        body += str + "\n"
-    sendemail(email_recipients,subject,body)
+        juice += str + "\n"
+    return juice
 
-def error(body):
-    record(body)
-    sendresultemail("Reservation Error")
+def senderroremail(subject,screenshot):
+    body=getpicklejuice()
+    sendemailwithattachment(email_recipients,subject,body,screenshot)
+
+def sendresultemail(subject):
+     body=getpicklejuice()
+     sendemail(email_recipients,subject,body)
+
+def error(errormsg):
+    screenshot=do_screenshot()
+    record(errormsg)
+    senderroremail("Reservation Error",screenshot)
     sendtext("Reservation Error")
     driver.quit()    # FIX ME
-    sys.exit(body)
+    sys.exit(errormsg)
 #
 # Save a screenshot for debugging
 #    
 def do_screenshot():
-    if debug:
-        my_date_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        my_file = my_debug_dir + my_date_time + '.png'
-        driver.save_full_page_screenshot(my_file)
-        record("Debug: screen shot saved as: "+my_file)
+    my_date_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    my_file = my_debug_dir + my_date_time + '.png'
+    driver.save_full_page_screenshot(my_file)
+    record("Debug: screen shot saved as: "+my_file)
+    return my_file
     
 # This was for debugging, it dumps out what times are available and/or unavailable in a table set 
 def dump_tableset(tableset):
@@ -453,6 +485,15 @@ def search_tableset(tableset,court,soughttime):
         error("Exception in searching tableset: "+str(e))
     return False
 
+def logout():
+    driver.get(web_site)
+    WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
+    time.sleep(200)
+    # show the my account menu in the page header, to expose the logout button
+    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
+    # click logout button
+    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
+
 # 
 # having found a suitable available time/court, log in as a user, and make a reservation, then log out
 # my_element: activeTime1 or activeTime2
@@ -484,7 +525,6 @@ def make_reservation(my_element,user):
 
     #waitelement("/html/body")
     #if findelementbyCSS("body[data-view='websessionalert']"):
-    #    error(user["username"] + " seems to be logged on.")
 
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 
@@ -514,8 +554,7 @@ def make_reservation(my_element,user):
     if dryrun: 
         if debug: 
             record("Dry run: Reservation was not actually made")
-#            if verbose: 
-#                do_screenshot()
+
         # since we aren't really making a reservation, we have to empty the cart and log out.         
         # So first go back to the shopping cart page by activating the back button
         waitclickw('//*[@id="webcheckout_buttonback"]')
@@ -548,7 +587,7 @@ def make_reservation(my_element,user):
 FallsChurchtz = ZoneInfo("America/New_York")
 now = datetime.now(FallsChurchtz)
 
-picklelogger = open("/tmp/picklejuice.log","a")
+picklelogger = open(picklejuice,"a")
 picklelogger.write("----- "+str(now.strftime('%I:%M:%S%p'))+'\n')
 
 # first parse the arguments
@@ -776,7 +815,8 @@ try:
         record("Trying to make reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
     make_reservation(available_time[0],user)
 except Exception as e:
-    error("Failed! Does " + user["username"] + " already have a reservation pending?")
+    # logout()
+    error("Failed! See screenshot.")
 
 if nReservations > 1:
     driver.switch_to.window(handles[1])
@@ -786,7 +826,8 @@ if nReservations > 1:
             record("Trying to make a second reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
         make_reservation(available_time[1],user)
     except Exception as e:
-        error("Failed: does " + user["username"] + " already have a reservation pending?")
+        # logout()
+        error("Failed: See screenshot.")
  
 record("Reservation process was successful")
 

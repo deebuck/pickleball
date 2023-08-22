@@ -323,9 +323,10 @@ def getpicklejuice():
     return juice
 
 def sendresult(subject,send_screenshot):
+     if send_screenshot:
+         screenshot=do_screenshot()
      juice=getpicklejuice()
      if send_screenshot:
-        screenshot=do_screenshot()
         sendemailwithattachment(email_recipients,subject,juice,screenshot)
      else:
         sendemail(email_recipients,subject,juice)

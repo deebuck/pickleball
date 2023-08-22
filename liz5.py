@@ -636,7 +636,7 @@ if debug:
     record('Attempting court reservation on '+str(hostname)+':\n'+sargs)
 else:
     email_recipients = "dee@wmbuck.net, lsalak@verizon.net"
-    text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com, 7038629558@myboostmobile.com"
+    text_recipients = "3037751709@tmomail.net, 7039738520@vtext.com"
 
 # build desired_times dictionary
 desired_times_dict = dict(zip(desired_time_keys, desired_time_values))

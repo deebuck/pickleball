@@ -314,7 +314,8 @@ def sendsms(body):
     sendemail(text_recipients,'Pickletext:',body)
         
 def getpicklejuice():
-    picklelogger.close()
+    # don't close picklelogger
+    # picklelogger.close()
     juice = ""
     with open(picklejuice) as fp:
         str = fp.read()
@@ -715,8 +716,9 @@ drs=""
 if dryrun:
     drs=" (dry run)"
 
-reservemessage = 'Reserving '+str(nReservations)+' court slots for: '+str(month)+'/'+str(day)+" for "+sDuration+" hours, times: "+str(desired_times)+drs 
+reservemessage = 'Pickleprocessor on ' + str(hostname) + ' reserving '+str(nReservations)+' slots: '+str(month)+'/'+str(day)+", "+sDuration+" hrs @ "+str(desired_times)+drs 
 record(reservemessage)
+sendsms(reservemessage)
 
 if not(immediate):
     record("Time is "+str(now.strftime('%I:%M:%S%p'))+" Falls Church time. Sleeping until midnight plus "+str(midnight_delay)+" seconds.");

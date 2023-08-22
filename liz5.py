@@ -335,8 +335,7 @@ def sendresult(subject,send_screenshot):
 def error(errormsg,with_screenshot):
     record(errormsg)
     sendresult("Reservation Error",with_screenshot)
-    #driver.quit()    # FIX ME
-    driver.Dispose()
+    driver.quit()    
     sys.exit(errormsg)
 #
 # Save a screenshot for debugging

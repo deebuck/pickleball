@@ -1,12 +1,22 @@
 #!/usr/bin/python3 
-# import, constants, etc
 
-# Packages that needed to be install: 
-# 
-# These are the AUR packages I had to install on Arch: 
+# Packages that needed to be installed: 
+# I haven't kept this list up to date. I've added a few more to the list, but not sure I have everything. 
+# On arch (on oregano) the packages are installed at the system level. 
+# On debian 12 (on tarragon) I have created a virtual environment (/home/dee/pickle-environment/venv) and 
+# some of the packages are installed there. 
+#
+# These are the packages I had to install.  
 # python-selenium
-# python-trio-websocket
-# python-tzdata
+# python-trio python-trio-websocket
+# python-tz python-tzdata
+#
+# In addition I have installed at the system level: 
+# argparse
+# email, mime, smtp libraries for sending mail, including mail with mime attachments
+# some timezone stuff tz, tzdata, zoneinfo
+# random
+# pretty print
 #
 import time
 
@@ -58,7 +68,7 @@ args=None # arguments to the program
 
 # these are set by arguments to the program 
 dryrun = 1        # do not actually make reservations, stop before clicking the final button
-verbose = None    # more chatty
+verbose = None    # be chatty on the console
 debug = True      # generate debugging messages, only send email/texts to dee
 width = 1200      # width of screen, unless headless
 height = 1200     # height of screen, unless headless
@@ -67,13 +77,13 @@ immediate = False # do the look/reserve right away, don't wait for midnight
 court_name = None # "location": location at which to reserve 
 session = None    # the coded value stipulating court time and duration
 preference = None # a string with court preferences
-offset = 0        # delay after midnigh, to give a different pickle picker and advantage
+offset = 0        # additional delay after midnight, to give a different pickle picker an advantage
 hostname = os.uname() [1] # where am I running
 logfile = None    # Log file
 secs = 0.4        # time to sleep between screens so that we can see the pages changing
 
 # midnight delay stuff
-# basically, we sleep until just after midnight, and then wake up and try to reserve a court.
+# basically, we usually sleep until just after midnight, and then wake up and try to reserve a court.
 # two factors affect how soon after midnigh we will wake up. 
 # one, called midnight_delay, is a random number generated here between 20 and 240 seconds. 
 # the second, called offset, is a parameter which can be specified to the program at run time, 
@@ -92,12 +102,13 @@ picklejuice = "/tmp/picklejuice.log"
 my_debug_dir = '/Users/abrao/Downloads/pickleball_'
 my_debug_dir = '/tmp/pickleball_'
 
-# man specified reservations require us to make 2 separate reservations
+# many specified reservations require us to make 2 separate reservations
 nReservations = 1 # whether to make 1 or 2 reservations 
 
-court_type = 'Pickleball' # court_name = 'Cherry Street Court #1' 
+court_type = 'Pickleball' # as opposed to Tennis court
 
 # if we make 2 reservations they have to be made by different users
+# we have (currently) 3 users to chose from. Which are used is pseudo-random.
 usernames = ['Liz', 'Sue', 'Brenda']
 userids = ['8158', '24270', '20388']
 passwords = ['C0rn1ch0n3!', '24270', 'Extracheese25!']
@@ -107,9 +118,10 @@ month = None
 day = None
 
 # this is the class field which exists on the html element if the time is available 
+# we really only need to look for the "success" class
 reservable_time_class = 'button multi-select full-block success cart-button cart-button--state-block'
 
-# the times when courts may be reserved
+# the possible times when courts may be reserved
 desired_time_values = [
     # 1 hour sessions
     ['8:00 am - 9:00 am'],['8:30 am - 9:30 am'],
@@ -231,7 +243,8 @@ desired_time_keys = [
 ]
 
 # This is a mapping of the preference specification coming in on the command line to the values which will be found 
-# in the reservation tables. 
+# in the reservation tables. The reservation tables have values for data-elements that are called "location", "facility", and "type" which 
+# have the values shown below. 
 preferences = {
     'ChT1': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Court #1",       "type": "Tennis Court" },
     'ChT2': { "location" : "North Cherry Street Tennis Courts", "facility": "Cherry Street Court #2",       "type": "Tennis Court" },
@@ -247,15 +260,26 @@ preferences = {
     'CvP4': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #4", "type": "Pickleball Courts" }
 }
 
-# utility functions, to make it easier to read
+# utility functions, to make the code easier to read
 
 def waitelement(path):
     try:
         elem = WebDriverWait(driver,20).until(EC.element_to_be_clickable((By.XPATH,path)))
     except TimeoutError:
-        raise "ElementTimeout";
+        error("Timeout waiting for path: " + path,True)
+    except NoSuchElementException:
+        error("No such element exception via path: " + path,True)
     return elem
-        
+
+def waitelementCSS(css):
+    try:
+        elem = WebDriverWait(driver,20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,css)))
+    except TimeoutError:
+        error("Timeout exception waiting for CSS: " + css,True)
+    except NoSuchElementException:
+        error("No such element exception via CSS: " + css,True)
+    return elem
+
 def waitclick(path):
     waitelement(path).click()
     
@@ -292,8 +316,8 @@ def sendemail(recipients,subject,body):
     s.send_message(msg)
     s.quit()
 
-# used to send a screenshot. To use for anything else, probably 
-# need to parameterize the filetype. This assumes jpg
+# used to send a screenshot attachment. To use this for anything else, you probably 
+# need to parameterize the filetype, because this assumes and hardcodes "jpg"
 def sendemailwithattachment(recipients,subject,body,filename):
     msg = email.mime.multipart.MIMEMultipart()
     msg['Subject'] = subject
@@ -314,8 +338,6 @@ def sendsms(body):
     sendemail(text_recipients,'Pickletext:',body)
         
 def getpicklejuice():
-    # don't close picklelogger
-    # picklelogger.close()
     juice = ""
     with open(picklejuice) as fp:
         str = fp.read()
@@ -346,7 +368,20 @@ def do_screenshot():
     driver.save_full_page_screenshot(my_file)
     record("Screen shot saved as: "+my_file)
     return my_file
-    
+
+# This was an attempt to perform a logout of the user if the program experiences an exception 
+# after logging someone in. The problem is that we don't know where we are. The idea was to 
+# get back to the main screen again, but this hasn't worked and isn't currently being used. 
+def logout():
+    driver.get(web_site)
+    WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
+    # this time delay was so I could explore the page before the program causes it to disappear from my screen
+    time.sleep(200)
+    # show the my account menu in the page header, to expose the logout button
+    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
+    # click logout button
+    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
+
 # This was for debugging, it dumps out what times are available and/or unavailable in a table set 
 def dump_tableset(tableset):
     for t in range(len(tableset)):
@@ -365,12 +400,28 @@ def dump_tableset(tableset):
         for tm in range(len(unavail)):
             print("Unavailable times: "+unavail[tm].text)
 
+# A piece of debugging code it took me a little time to get right, so I'm keeping it, for now. 
+# This isn't being used now. 
+# The problem that this helped me sort out, is that after the body is loaded, javascript triggers which MAY determine that the user is already logged in elsewhere, 
+# or that the user is trying to make a second reservation. In such a case javascript triggers a redirect. This creates a race condition, selenium is trying to analyze
+# the page it has just loaded, while meantime javascript is changing the page out from under us. 
+# I was trying to identify certain error conditions by looking at an attribute of the body tag, and it was changing on the redirect. 
+#
+def dump_body_attributes(bodyelem):
+    record("Body attributes:")
+    attscript='var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;'
+    attrs = driver.execute_script(attscript, bodyelem)
+    pprint(attrs)
+    #propscript='var items = {}; for (index = 0; index < arguments[0].properties.length; ++index) { items[arguments[0].properties[index].name] = arguments[0].properties[index].value }; return items;'
+    #props = driver.execute_script(propscript, bodyelem)
+    #pprint(props)
+    #html body div#app.webaddtocard div#app-container div#content div.inner form#processingprompts
 
 # These are the "substantive" routines
 
-# Function to navigate a web page reservation window, specifying the date (myday, mymonth) and obtain the html elements for the table of available 
-# court locations and times, returning that tableset for subsequent analysis. 
-# The program now selects the courts both at Cavalier Trail and North Cherry Street, for date mymont/myday. It fetches at time myreservation_tim. 
+# Fetch_tableset is a function to navigate a web page reservation window, specifying the date (myday, mymonth) and try to obtain the html elements for the table of available 
+# court locations and times. It returns that tableset for subsequent analysis. 
+# The program now selects the courts both at Cavalier Trail and North Cherry Street, for date mymonth/myday. It fetches at time myreservation_time. 
 def fetch_tableset(myday, mymonth, myreservation_time):
     
     monthNum = mymonth
@@ -403,18 +454,11 @@ def fetch_tableset(myday, mymonth, myreservation_time):
     # and put in our own value    
     beginTimeElement.send_keys(myreservation_time)
 
-    # now selecting the location - click on the location dropdown list icon, then select the location(s)
+    # now select the location - click on the location dropdown list icon, then select the location(s)
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/label/span[1]')
 
-    # The original version entered a court name string (which did an autocomplete action) then clicked select all
-    #findelement('//*[@id="location_vm_1_filter_input"]').send_keys(mycourt_name)
-    #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div[1]/div/div/div[2]/a[1]')
-
-    # The newer version clicks the select boxes for both Cavalier and Cherry. This is kludgy and fragile. 
-    # It would be better to check the li's and look for the courts we want
+    # Click the select boxes for both Cavalier and Cherry. 
     locationdropdown = findelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul')
-    #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[1]')
-    #clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul/li[4]')
     clickelementbyCSS("li[data-value='NCHER']")
     clickelementbyCSS("li[data-value='CAVAL']")
     
@@ -488,19 +532,6 @@ def search_tableset(tableset,court,soughttime):
         error("Exception in searching tableset: "+str(e),True)
     return False
 
-# This was an attempt to perform a logout of the user if the program experiences an exception 
-# after logging someone in. The problem is that we don't know where we are. The idea was to 
-# get back to the main screen again, but this hasn't worked and isn't currently being used. 
-def logout():
-    driver.get(web_site)
-    WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
-    # this time delay was so I could explore the page before the program causes it to disappear from my screen
-    time.sleep(200)
-    # show the my account menu in the page header, to expose the logout button
-    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
-    # click logout button
-    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
-
 # 
 # having found a suitable available time/court, log in as one of the users, and make a reservation, then log out
 # my_element: activeTime1 or activeTime2
@@ -525,12 +556,42 @@ def make_reservation(my_element,user):
     loginButtonXPATH = '//*[@id="weblogin_buttonlogin"]'
     for item in [[usernameXPATH, my_userid], [passwordXPATH, my_password], [loginButtonXPATH, Keys.ENTER]]:
         waitelement(item[0]).send_keys(item[1])
-        time.sleep(secs)
+    
+    time.sleep(secs)
+
     if debug:
         record("Logged in successfully as "+my_userid)
 
-    #waitelement("/html/body")
-    #if findelementbyCSS("body[data-view='websessionalert']"):
+    # Here I am trying to detect two conditions that occur when trying to log in to make a reservation. 
+    # One is that there is an active session open for the user we choose. This happens frequently in debugging, because something goes wrong, and we bomb out
+    # with the user still logged in. 
+    # The second condition is that this user already has a reservation. 
+    # It has been hard to catch this stuff and check for it, because I think there is a redirect from javascript that I am missing. I need to wait, after the page 
+    # loads for the javascript on the page to run and detect the condition, and then it reloads the page. If I check too soon I have the "first result", before the 
+    # redirect. 
+    # So this sleep is to give javascript time to settle and show a redirect.  
+    time.sleep(5)
+
+    # the body tag has an attribute we can trigger off of. 
+    bodyelem=waitelement("/html/body")
+    
+    try:
+        if findelementbyCSS('body[data-view="websessionalert"]'):
+            error(my_username + ' has an active session open',True)
+    except NoSuchElementException:
+        if debug: 
+            record(my_username + ' has no active session')
+    except Exception as e: 
+        error('Threw error looking for websession alert page: '+str(e),True)
+
+    try: 
+        if findelementbyCSS('div#content div.inner form#processingprompts'):
+            error(my_username + ' already has a reservation',True)
+    except NoSuchElementException:
+        if debug: 
+            record(my_username + ' has no existing reservation')
+    except Exception as e:
+        error('Threw exception looking for processing prompt form: '+str(e),True)
 
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 
@@ -591,7 +652,7 @@ def make_reservation(my_element,user):
 FallsChurchtz = ZoneInfo("America/New_York")
 now = datetime.now(FallsChurchtz)
 
-picklelogger = open(picklejuice,"a")
+picklelogger = open(picklejuice,"w")
 picklelogger.write("----- "+str(now.strftime('%I:%M:%S%p'))+'\n')
 
 # first parse the arguments
@@ -747,18 +808,30 @@ reserved_time = [None,None]
 tables = [None, None]
 
 try:
-    driver.get(web_site)
-    WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
-    
-    # ensure that the page is stable, and that the desired "tennis court" element is present
     to=0
     found=False
+
     while to < 3 and not found:
         try:
-            found = waitelement('/html/body/div/div/div/div/div[2]/section/div/a[5]')
+            driver.get(web_site)
+            found = WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
+        except Exception as e0:
+            to += 1
+            record("Exception 0: " + str(e0) + " getting original page")
+
+    if not found: 
+        error("Failed to load the website")
+
+    found = False
+
+    # ensure that the page is stable, and that the desired "tennis court" element is present
+    while to < 3 and not found:
+        try:
+            #found = waitelement('/html/body/div/div/div/div/div[2]/section/div/a[5]')
+            found = waitelementCSS('section#home')
         except Exception as e1:
             to += 1
-            record("Exception " + str(e1) +" on startup" )
+            record("Exception 1: " + str(e1) +" on startup" )
 
     if not found:
         error("Failed to correctly load the initial page",True)
@@ -770,9 +843,6 @@ try:
 
     handles = driver.window_handles
      
-    if len(handles) > 2:
-        error("Too many handles",False)
-
     driver.switch_to.window(handles[0])
 
     if nReservations > 1:                                 
@@ -820,7 +890,7 @@ try:
     make_reservation(available_time[0],user)
 except Exception as e:
     # logout()
-    error("Failed! See screenshot.",True)
+    error("Exception making first reservation: " + str(e) + ". Screenshot attached.",True)
 
 if nReservations > 1:
     driver.switch_to.window(handles[1])
@@ -830,7 +900,7 @@ if nReservations > 1:
         make_reservation(available_time[1],user)
     except Exception as e:
         # logout()
-        error("Failed: See screenshot.",True)
+        error("Exception making second reservation: " + str(e) + ". Screenshot attached.",True)
 
 if dryrun: 
     sendresult("(Dryrun) Reservation run was successful",False)

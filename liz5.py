@@ -584,14 +584,14 @@ def make_reservation(my_element,user):
     except Exception as e: 
         error('Threw error looking for websession alert page: '+str(e),True)
 
-    try: 
-        if findelementbyCSS('div#content div.inner form#processingprompts'):
-            error(my_username + ' already has a reservation',True)
-    except NoSuchElementException:
-        if debug: 
-            record(my_username + ' has no existing reservation')
-    except Exception as e:
-        error('Threw exception looking for processing prompt form: '+str(e),True)
+    #try: 
+    #    if findelementbyCSS('div#content div.inner form#processingprompts'):
+    #        error(my_username + ' already has a reservation',True)
+    #except NoSuchElementException:
+    #    if debug: 
+    #        record(my_username + ' has no existing reservation')
+    #except Exception as e:
+    #    error('Threw exception looking for processing prompt form: '+str(e),True)
 
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 

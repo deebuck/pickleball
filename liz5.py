@@ -338,6 +338,7 @@ def sendsms(body):
     sendemail(text_recipients,'Pickletext:',body)
         
 def getpicklejuice():
+    picklelogger.flush();
     juice = ""
     with open(picklejuice) as fp:
         str = fp.read()
@@ -562,14 +563,16 @@ def make_reservation(my_element,user):
     if debug:
         record("Logged in successfully as "+my_userid)
 
-    # Here I am trying to detect two conditions that occur when trying to log in to make a reservation. 
+    # Here I am trying to detect two error conditions that occur when trying to log in to make a reservation. 
     # One is that there is an active session open for the user we choose. This happens frequently in debugging, because something goes wrong, and we bomb out
     # with the user still logged in. 
     # The second condition is that this user already has a reservation. 
-    # It has been hard to catch this stuff and check for it, because I think there is a redirect from javascript that I am missing. I need to wait, after the page 
-    # loads for the javascript on the page to run and detect the condition, and then it reloads the page. If I check too soon I have the "first result", before the 
-    # redirect. 
-    # So this sleep is to give javascript time to settle and show a redirect.  
+    #
+    # It has been hard to catch this stuff and check for it, because I think there is code on the loaded page to detect this situation. The javascript is invoked on 
+    # page load, and if it needs to, it does a redirect. The markers I am looking for are on the redirected/reloaded page. If I check too soon, I am missing the markers
+    # because I'm still looking at the initial page, before the redirect. Therefore, I need to wait, after the page loads for the javascript on the page to 
+    # run, to detect the condition, and then to perform a redirect. 
+    # So this sleep is to give javascript time to redirect, and for the new page to be acquired.  
     time.sleep(5)
 
     # the body tag has an attribute we can trigger off of. 
@@ -584,14 +587,16 @@ def make_reservation(my_element,user):
     except Exception as e: 
         error('Threw error looking for websession alert page: '+str(e),True)
 
-    #try: 
-    #    if findelementbyCSS('div#content div.inner form#processingprompts'):
-    #        error(my_username + ' already has a reservation',True)
-    #except NoSuchElementException:
-    #    if debug: 
-    #        record(my_username + ' has no existing reservation')
-    #except Exception as e:
-    #    error('Threw exception looking for processing prompt form: '+str(e),True)
+    try: 
+        if findelementbyCSS('div#content div.inner form#processingprompts div#tab-24127 div.rule-group div#processingprompts_rulegroup'):
+            record("matched"); 
+            time.sleep(600)
+            error(my_username + ' already has a reservation',True)
+    except NoSuchElementException:
+        if debug: 
+            record(my_username + ' has no existing reservation')
+    except Exception as e:
+        error('Threw exception looking for processing prompt form: '+str(e),True)
 
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 

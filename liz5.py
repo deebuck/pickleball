@@ -300,6 +300,9 @@ def clickelementbyCSS(selector):
     findelementbyCSS(selector).click()
 
 # recording, debuging, communications
+def debugmsg(msg):
+    if debug:
+        record(msg)
 
 def record(msg):
     if verbose:
@@ -666,6 +669,8 @@ def search_for_court():
     times = [None,None]
     found = False
 
+    debugmsg("Seaching for a court")
+
     if nReservations > 1:
         script = "window.open(" + '"' + web_site + '"' + ")"
         driver.execute_script("window.open(" + '"' + web_site + '"' + ")")
@@ -678,23 +683,25 @@ def search_for_court():
     if nReservations > 1:                                 
         driver.switch_to.window(handles[1])
         tables[1] = fetch_tableset(day, month, reservation_time)
+        debugmsg("Got the first set of tables")
         driver.switch_to.window(handles[0])
             
     tables[0] = fetch_tableset(day, month, reservation_time)
-    
-    # now trying to find a court with availability at the desired time(s)
-    first_time = second_time = None
+    debugmsg("Got the second set of tables")
 
     # check against each of the preferences we were give for a court and type at the indicated time 
     for p in range(len(court_prefs)):
         court = court_prefs[p]; 
+        debugmsg("Search for times on court "+int(p))
         times[0] = search_tableset(tables[0],court,desired_times[0])
         if times[0]: 
+            debugmsg("Found a candidate first time for this court")
             if nReservations >1:
                 driver.switch_to.window(handles[1])
                 times[1] = search_tableset(tables[1],court_prefs[p],desired_times[1])
                 driver.switch_to.window(handles[0])
         if times[0] and times[1]: 
+            debugmsg("Found both times for this court")
             break #for loop over possible prefs
 
     if not(times[0]):
@@ -707,6 +714,7 @@ def search_for_court():
     if nReservations > 1:
         record("Will make a second reservation for "+times[1].text+", also at "+court['facility'])
 
+    debugmsg("Returning with times")
     return times
 
 #
@@ -878,10 +886,14 @@ ensure_started()
 look=0
 found=False
 
+debugmsg("Begin search stage")
+
 while look < 3 and not found:
     try:
+        debugmsg("Look: look")
         timeelements = search_for_court() 
         if timeelements:
+            debugmsg("Successfully found a court")
             found = True  
     except Exception as e0:
         look += 1

@@ -647,6 +647,68 @@ def make_reservation(my_element,user):
 
     return
 
+def ensure_started():
+    to=0
+    found=False
+
+    while to < 3 and not found:
+        try:
+            driver.get(web_site)
+            found = WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
+        except Exception as e0:
+            to += 1
+            record("Exception 0: " + str(e0) + " getting original page")
+    if not found: 
+        error("Failed to load the website")
+
+def search_for_court():
+    tables = [None, None]
+    times = [None,None]
+    found = False
+
+    if nReservations > 1:
+        script = "window.open(" + '"' + web_site + '"' + ")"
+        driver.execute_script("window.open(" + '"' + web_site + '"' + ")")
+        time.sleep(secs)
+
+    handles = driver.window_handles
+    
+    driver.switch_to.window(handles[0])
+
+    if nReservations > 1:                                 
+        driver.switch_to.window(handles[1])
+        tables[1] = fetch_tableset(day, month, reservation_time)
+        driver.switch_to.window(handles[0])
+            
+    tables[0] = fetch_tableset(day, month, reservation_time)
+    
+    # now trying to find a court with availability at the desired time(s)
+    first_time = second_time = None
+
+    # check against each of the preferences we were give for a court and type at the indicated time 
+    for p in range(len(court_prefs)):
+        court = court_prefs[p]; 
+        times[0] = search_tableset(tables[0],court,desired_times[0])
+        if times[0]: 
+            if nReservations >1:
+                driver.switch_to.window(handles[1])
+                times[1] = search_tableset(tables[1],court_prefs[p],desired_times[1])
+                driver.switch_to.window(handles[0])
+        if times[0] and times[1]: 
+            break #for loop over possible prefs
+
+    if not(times[0]):
+        error("Could not find a time slot to reserve",False)
+
+    if nReservations > 1 and not(times[1]):
+        error("Could not find the second required court time",False)
+
+    record("Will make a reservation for "+times[0].text+" at "+court['facility'])
+    if nReservations > 1:
+        record("Will make a second reservation for "+times[1].text+", also at "+court['facility'])
+
+    return times
+
 #
 # mainline code begins here
 #
@@ -805,89 +867,30 @@ else:
 
 service = Service(log_output=os.path.devnull)
 
-driver = webdriver.Firefox(options=options, service=service)
- 
-reservation_done = False
-available_time = [None, None]
-reserved_time = [None,None]
-tables = [None, None]
+driver = webdriver.Firefox(options=options, service=service) 
 
-try:
-    to=0
-    found=False
+# ensure that the page is stable, and that the desired "tennis court" element is present
+ensure_started()
 
-    while to < 3 and not found:
-        try:
-            driver.get(web_site)
-            found = WebDriverWait(driver,10000).until(EC.visibility_of_element_located((By.TAG_NAME,'body')))
-        except Exception as e0:
-            to += 1
-            record("Exception 0: " + str(e0) + " getting original page")
+# Look for a court to reserve
+# There is some problem with occasionally happens where a fault is experienced
+# while looking for the court. It seems to be sporadic. So now we try three times. 
+look=0
+found=False
 
-    if not found: 
-        error("Failed to load the website")
+while look < 3 and not found:
+    try:
+        timeelements = search_for_court() 
+        if timeelements:
+            found = True  
+    except Exception as e0:
+        look += 1
+        record("Exception 0: " + str(e0) + " searching for a court")
 
-    found = False
+if not found: 
+    error("Failed to find a court after three tries")
 
-    # ensure that the page is stable, and that the desired "tennis court" element is present
-    while to < 3 and not found:
-        try:
-            #found = waitelement('/html/body/div/div/div/div/div[2]/section/div/a[5]')
-            found = waitelementCSS('section#home')
-        except Exception as e1:
-            to += 1
-            record("Exception 1: " + str(e1) +" on startup" )
-
-    if not found:
-        error("Failed to correctly load the initial page",True)
-
-    if nReservations > 1:
-        script = "window.open(" + '"' + web_site + '"' + ")"
-        driver.execute_script("window.open(" + '"' + web_site + '"' + ")")
-        time.sleep(secs)
-
-    handles = driver.window_handles
-     
-    driver.switch_to.window(handles[0])
-
-    if nReservations > 1:                                 
-        driver.switch_to.window(handles[1])
-        tables[1] = fetch_tableset(day, month, reservation_time)
-        driver.switch_to.window(handles[0])
-            
-    tables[0] = fetch_tableset(day, month, reservation_time)
-    
-    # now trying to find a court with availability at the desired time(s)
-    first_time = second_time = None
-
-    # check against each of the preferences we were give for a court and type at the indicated time 
-    for p in range(len(court_prefs)):
-        court = court_prefs[p]; 
-        available_time[0] = search_tableset(tables[0],court,desired_times[0])
-        if available_time[0]: 
-            first_time = available_time[0].text
-            if nReservations >1:
-                driver.switch_to.window(handles[1])
-                available_time[1] = search_tableset(tables[1],court_prefs[p],desired_times[1])
-                if available_time[1]:
-                    second_time = available_time[1].text
-                driver.switch_to.window(handles[0])
-        if first_time and second_time: 
-            break #for loop over possible prefs
-
-    if not(first_time):
-        error("Could not find a time slot to reserve",False)
-
-    if nReservations > 1 and not(second_time):
-        error("Could not find the second required court time",False)
-
-    record("Making a reservation for "+first_time+" at "+court['facility'])
-    if nReservations > 1:
-        record("Making a second reservation for "+second_time+", also at "+court['facility'])
-except Exception as e:
-    error("Exception during table search stage:"+str(e),True)
-
-### code to make the resevations:
+# Make the reservation
 
 try:
     user = choose_user()

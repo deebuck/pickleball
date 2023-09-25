@@ -589,6 +589,8 @@ def choose_user():
     # select a user under whose account we will make a reservation, then remove it from the list
     # Counter-intuitively, have to specify the range as 0 - #of users, rather than 0 - #users-1. 
     #
+    if len(userids)<1:
+        error("No more users available for logging in")
     userindex = randrange(0,len(userids))
     user = {"userid":userids[userindex],"username":usernames[userindex],"password":passwords[userindex]}
     userids.remove(user["userid"])

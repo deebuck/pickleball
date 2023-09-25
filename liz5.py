@@ -421,11 +421,17 @@ def dump_body_attributes(bodyelem):
     #pprint(props)
     #html body div#app.webaddtocard div#app-container div#content div.inner form#processingprompts
 
-# These are the "substantive" routines
+# Now begin the "substantive" routines
 
-# Fetch_tableset is a function to navigate a web page reservation window, specifying the date (myday, mymonth) and try to obtain the html elements for the table of available 
-# court locations and times. It returns that tableset for subsequent analysis. 
-# The program now selects the courts both at Cavalier Trail and North Cherry Street, for date mymonth/myday. It fetches at time myreservation_time. 
+# First are the functions which try to find a court
+# - fetch_tableset navigates the website to retrieve the list of court times and locations available on a single day, returning it as a tableset
+# - search_tableset searches a tableset looking for a particular time at a particular court location
+# - search_for_court is the driver, using a list of possible desirable court times and locations it calls the other two functions to try to find a desirable reservation
+
+# fetch_tableset 
+# This navigate the web page reservation window, specifying the date (myday, mymonth) and start time (myreservation_time) and trying to obtain the 
+# html elements for the table of available court locations and times. It returns that "tableset" for subsequent analysis. 
+# Assumption: considers only the courts at Cavalier Trail and North Cherry Street.
 def fetch_tableset(myday, mymonth, myreservation_time):
     
     monthNum = mymonth
@@ -485,26 +491,11 @@ def fetch_tableset(myday, mymonth, myreservation_time):
 
     return tableset
 
-def choose_user(): 
-    if debug: 
-        record("Userids: " + " ".join(str(x) for x in userids))
-        record("Usernames: " + " ".join(str(x) for x in usernames))
-
-    # select a user under whose account we will make a reservation, then remove it from the list
-    # Counter-intuitively, have to specify the range as 0 - #of users, rather than 0 - #users-1. 
-    #
-    userindex = randrange(0,len(userids))
-    user = {"userid":userids[userindex],"username":usernames[userindex],"password":passwords[userindex]}
-    userids.remove(user["userid"])
-    usernames.remove(user["username"])
-    passwords.remove(user["password"])
-    if debug:
-        record ( "Chose user " + user["username"] + "(" + str(userindex) + ")" )
-    return user
-
 #
+# search_tableset 
 # Search an available times tableset (returned by fetch_tableset) looking for a specific desired time
 # tableset is the tableset returned from fetch_tableset
+# court is a "court object", having a "location", "type", and "facility" field
 # soughttime is a string time specification 
 #
 def search_tableset(tableset,court,soughttime): 
@@ -512,8 +503,7 @@ def search_tableset(tableset,court,soughttime):
     location = court["location"]
     type = court["type"]
     facility = court["facility"]
-    if debug: 
-        record ("Checking "+facility)   
+ 
     try: 
         for table_index in range(len(tableset)):
             table = tableset[table_index]
@@ -536,16 +526,86 @@ def search_tableset(tableset,court,soughttime):
         error("Exception in searching tableset: "+str(e),True)
     return False
 
+def search_for_court():
+    tables = [None, None]
+    times = [None,None]
+    found = False
+
+    if nReservations > 1:
+        script = "window.open(" + '"' + web_site + '"' + ")"
+        driver.execute_script("window.open(" + '"' + web_site + '"' + ")")
+        time.sleep(secs)
+
+    handles = driver.window_handles
+    
+    driver.switch_to.window(handles[0])
+
+    if nReservations > 1:                                 
+        driver.switch_to.window(handles[1])
+        tables[1] = fetch_tableset(day, month, reservation_time)
+        driver.switch_to.window(handles[0])
+            
+    tables[0] = fetch_tableset(day, month, reservation_time)
+
+    # check against each of the preferences we were give for a court and type at the indicated time 
+    for p in range(len(court_prefs)):
+        time0 = time1 = False
+        court = court_prefs[p] 
+        tsrslt = search_tableset(tables[0],court,desired_times[0])
+        if tsrslt:
+            times[0] = tsrslt
+            time0 = times[0].text
+            if nReservations >1:
+                driver.switch_to.window(handles[1])
+                tsrslt = search_tableset(tables[1],court_prefs[p],desired_times[1])
+                if tsrslt:
+                    times[1] = tsrslt
+                    time1 = times[1].text
+                driver.switch_to.window(handles[0])
+        if time0 and time1: 
+            break #for loop over possible prefs
+
+    if not(time0):
+        error("Could not find a time slot to reserve",False)
+
+    if nReservations > 1 and not(time1):
+        error("Could not find the second required court time",False)
+
+    record("Will make a reservation for "+time0+" at "+court['facility'])
+    if nReservations > 1:
+        record("Will make a second reservation for "+time1+", also at "+court['facility'])
+
+    return times
+
 # 
 # having found a suitable available time/court, log in as one of the users, and make a reservation, then log out
 # my_element: activeTime1 or activeTime2
 # my_handle: driver handle for this window
+def choose_user(): 
+    #if debug: 
+    #    record("Userids: " + " ".join(str(x) for x in userids))
+    #    record("Usernames: " + " ".join(str(x) for x in usernames))
 
-def make_reservation(my_element,user):
+    # select a user under whose account we will make a reservation, then remove it from the list
+    # Counter-intuitively, have to specify the range as 0 - #of users, rather than 0 - #users-1. 
+    #
+    userindex = randrange(0,len(userids))
+    user = {"userid":userids[userindex],"username":usernames[userindex],"password":passwords[userindex]}
+    userids.remove(user["userid"])
+    usernames.remove(user["username"])
+    passwords.remove(user["password"])
+    #if debug:
+    #    record ( "Chose user " + user["username"] + "(" + str(userindex) + ")" )
+    return user
+
+def make_reservation(my_element):
 
     # click on the passed in element, to activate the reservation process
     my_element.click()
-    
+
+    user = choose_user()
+    record("Trying to make reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
+
     # obtain the user info
     my_userid=user["userid"]
     my_username=user["username"]
@@ -563,8 +623,8 @@ def make_reservation(my_element,user):
     
     time.sleep(secs)
 
-    if debug:
-        record("Logged in successfully as "+my_userid)
+    #if debug:
+    #    record("Logged in successfully as "+my_userid)
 
     # Here I am trying to detect two error conditions that occur when trying to log in to make a reservation. 
     # One is that there is an active session open for the user we choose. This happens frequently in debugging, because something goes wrong, and we bomb out
@@ -592,14 +652,15 @@ def make_reservation(my_element,user):
 
     try: 
         if findelementbyCSS('div#content div.inner form#processingprompts div#tab-24127 div.rule-group div#processingprompts_rulegroup'):
-            record("matched"); 
-            time.sleep(600)
+            # this delay was for debugging, so I could look at the pages
+            #record("matched"); 
+            #time.sleep(600)
             error(my_username + ' already has a reservation',True)
     except NoSuchElementException:
         if debug: 
             record(my_username + ' has no existing reservation')
     except Exception as e:
-        error('Threw exception looking for processing prompt form: '+str(e),True)
+        error('Threw exception looking for existing reservation: '+str(e),True)
 
     # after logging in a new set of prompts must be satisfied, to complete the "purchase"
 
@@ -664,58 +725,6 @@ def ensure_started():
     if not found: 
         error("Failed to load the website")
 
-def search_for_court():
-    tables = [None, None]
-    times = [None,None]
-    found = False
-
-    debugmsg("Seaching for a court")
-
-    if nReservations > 1:
-        script = "window.open(" + '"' + web_site + '"' + ")"
-        driver.execute_script("window.open(" + '"' + web_site + '"' + ")")
-        time.sleep(secs)
-
-    handles = driver.window_handles
-    
-    driver.switch_to.window(handles[0])
-
-    if nReservations > 1:                                 
-        driver.switch_to.window(handles[1])
-        tables[1] = fetch_tableset(day, month, reservation_time)
-        debugmsg("Got the first set of tables")
-        driver.switch_to.window(handles[0])
-            
-    tables[0] = fetch_tableset(day, month, reservation_time)
-    debugmsg("Got the second set of tables")
-
-    # check against each of the preferences we were give for a court and type at the indicated time 
-    for p in range(len(court_prefs)):
-        court = court_prefs[p]; 
-        debugmsg("Search for times on court "+int(p))
-        times[0] = search_tableset(tables[0],court,desired_times[0])
-        if times[0]: 
-            debugmsg("Found a candidate first time for this court")
-            if nReservations >1:
-                driver.switch_to.window(handles[1])
-                times[1] = search_tableset(tables[1],court_prefs[p],desired_times[1])
-                driver.switch_to.window(handles[0])
-        if times[0] and times[1]: 
-            debugmsg("Found both times for this court")
-            break #for loop over possible prefs
-
-    if not(times[0]):
-        error("Could not find a time slot to reserve",False)
-
-    if nReservations > 1 and not(times[1]):
-        error("Could not find the second required court time",False)
-
-    record("Will make a reservation for "+times[0].text+" at "+court['facility'])
-    if nReservations > 1:
-        record("Will make a second reservation for "+times[1].text+", also at "+court['facility'])
-
-    debugmsg("Returning with times")
-    return times
 
 #
 # mainline code begins here
@@ -881,43 +890,42 @@ driver = webdriver.Firefox(options=options, service=service)
 ensure_started()
 
 # Look for a court to reserve
-# There is some problem with occasionally happens where a fault is experienced
+# There is some problem which occasionally happens where a fault is experienced
 # while looking for the court. It seems to be sporadic. So now we try three times. 
 look=0
 found=False
 
-debugmsg("Begin search stage")
+debugmsg("Begin search stage, try "+str(look))
 
 while look < 3 and not found:
     try:
-        debugmsg("Look: look")
         timeelements = search_for_court() 
         if timeelements:
             debugmsg("Successfully found a court")
             found = True  
     except Exception as e0:
+        record("Exception searching for a court:\n" + str(e0))
         look += 1
-        record("Exception 0: " + str(e0) + " searching for a court")
+        debugmsg("Looking again, try "+str(look))
 
 if not found: 
     error("Failed to find a court after three tries")
 
 # Make the reservation
 
+debugmsg("Begin reservation stage")
+handles = driver.window_handles
+
 try:
-    user = choose_user()
-    record("Trying to make reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
-    make_reservation(available_time[0],user)
+    make_reservation(timeelements[0])
 except Exception as e:
     # logout()
     error("Exception making first reservation: " + str(e) + ". Screenshot attached.",True)
 
 if nReservations > 1:
     driver.switch_to.window(handles[1])
-    user = choose_user()
     try: 
-        record("Trying to make a second reservation as user " + user["username"] + "(" + str(user["userid"]) + ")")
-        make_reservation(available_time[1],user)
+        make_reservation(timeelements[1])
     except Exception as e:
         # logout()
         error("Exception making second reservation: " + str(e) + ". Screenshot attached.",True)

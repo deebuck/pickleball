@@ -600,6 +600,12 @@ def choose_user():
     #    record ( "Chose user " + user["username"] + "(" + str(userindex) + ")" )
     return user
 
+def logout(): 
+    # show the my account menu in the page header, to expose the logout button
+    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
+    # click logout button
+    waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
+
 def make_reservation(my_element):
 
     # click on the passed in element, to activate the reservation process
@@ -654,10 +660,11 @@ def make_reservation(my_element):
 
     try: 
         if findelementbyCSS('div#content div.inner form#processingprompts div#tab-24127 div.rule-group div#processingprompts_rulegroup'):
-            # this delay was for debugging, so I could look at the pages
-            #record("matched"); 
-            #time.sleep(600)
+            clickelementbyCSS('div#content div.inner form#processingprompts div#tab-24127 div.rule-group div#processingprompts_buttoncancel')
+            time.sleep(secs)
+            logout()
             error(my_username + ' already has a reservation',True)
+
     except NoSuchElementException:
         if debug: 
             record(my_username + ' has no existing reservation')

@@ -526,6 +526,10 @@ def search_tableset(tableset,court,soughttime):
         error("Exception in searching tableset: "+str(e),True)
     return False
 
+#
+# search_for_court
+# This is a driver for the previous two functions. This loops over the set of desired times and 
+# invokes search_tableset for each desired time, stopping when it finds one. 
 def search_for_court():
     tables = [None, None]
     times = [None,None]
@@ -578,9 +582,12 @@ def search_for_court():
     return times
 
 # 
-# having found a suitable available time/court, log in as one of the users, and make a reservation, then log out
-# my_element: activeTime1 or activeTime2
-# my_handle: driver handle for this window
+# having found a suitable available time/court, the next stage is to log in as one of the users, 
+# and make a reservation. The following set of functions are about making reservations. 
+
+# Choose_user
+# select one of the users to use for login, more or less randomly.
+# then remove it from the list so we don't use it again.  
 def choose_user(): 
     #if debug: 
     #    record("Userids: " + " ".join(str(x) for x in userids))
@@ -600,12 +607,17 @@ def choose_user():
     #    record ( "Chose user " + user["username"] + "(" + str(userindex) + ")" )
     return user
 
+# Logout
+# Log out the current user
 def logout(): 
     # show the my account menu in the page header, to expose the logout button
     waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
     # click logout button
     waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
 
+# Make_reservation
+# make a reservation at the time specified in my_element. 
+# my_element is an element from the tableset. 
 def make_reservation(my_element):
 
     # click on the passed in element, to activate the reservation process
@@ -635,8 +647,9 @@ def make_reservation(my_element):
     #    record("Logged in successfully as "+my_userid)
 
     # Here I am trying to detect two error conditions that occur when trying to log in to make a reservation. 
-    # One is that there is an active session open for the user we choose. This happens frequently in debugging, because something goes wrong, and we bomb out
+    # One is that there is an active session open for the user we chose. This happens frequently in debugging, because something goes wrong, and we bomb out
     # with the user still logged in. 
+    #
     # The second condition is that this user already has a reservation. 
     #
     # It has been hard to catch this stuff and check for it, because I think there is code on the loaded page to detect this situation. The javascript is invoked on 
@@ -649,6 +662,8 @@ def make_reservation(my_element):
     # the body tag has an attribute we can trigger off of. 
     bodyelem=waitelement("/html/body")
     
+    # In both of these two try blocks, the "normal" condition is the NoSuchElement exception. 
+    # Finding the element signals that the error condition is present. 
     try:
         if findelementbyCSS('body[data-view="websessionalert"]'):
             error(my_username + ' has an active session open',True)
@@ -658,13 +673,14 @@ def make_reservation(my_element):
     except Exception as e: 
         error('Threw error looking for websession alert page: '+str(e),True)
 
+    # look for the "already has a reservation" error, and if we get that, try to do a log out. Otherwise, when we bomb out with 
+    # the error call, we will leave the user logged in. 
     try: 
         if findelementbyCSS('div#content div.inner form#processingprompts div#tab-24127 div.rule-group div#processingprompts_rulegroup'):
             clickelementbyCSS('div#content div.inner form#processingprompts div#tab-24127 div.rule-group div#processingprompts_buttoncancel')
             time.sleep(secs)
             logout()
             error(my_username + ' already has a reservation',True)
-
     except NoSuchElementException:
         if debug: 
             record(my_username + ' has no existing reservation')
@@ -705,11 +721,9 @@ def make_reservation(my_element):
         waitclickw('//*[@id="webcheckout_buttonback"]')
         # empty the cart, using the button provided for that
         waitclickw('//*[@id="webcart_buttonemptycart"]')
-        # show the my account menu in the page header, to expose the logout button
-        waitclickw('/html/body/div/div/header/div/div[4]/ul/li/a')
-        # click logout button
-        waitclickw('/html/body/div/div/header/div/div[4]/ul/li/div/ul/li[5]/ul/li[4]/a')
+        logout()
     else:
+        # Not a dry-run, so make the reservation
         # Activate the Continue button on the Checkout page, to complete our purchase
         waitclickw('//*[@id="webcheckout_buttoncontinue"]')
         if debug:
@@ -720,6 +734,9 @@ def make_reservation(my_element):
 
     return
 
+# We've sometimes had some peculiar errors when we first launch the page, perhaps related to 
+# the host changing the data at midnight, perhaps restarting the web-server ?
+# This is just to ensure we have a stable start-up page when we begin. 
 def ensure_started():
     to=0
     found=False

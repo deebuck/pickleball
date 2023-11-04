@@ -3,13 +3,13 @@
 # Packages that needed to be installed: 
 # I haven't kept this list up to date. I've added a few more to the list, but not sure I have everything. 
 # On arch (on oregano) the packages are installed at the system level. 
-# On debian 12 (on tarragon) I have created a virtual environment (/home/dee/pickle-environment/venv) and 
-# some of the packages are installed there. 
+# On debian 12 (on tarragon) I have created a virtual environment (/home/dee/pickleplace) and 
+# the packages are installed there. 
 #
 # These are the packages I had to install.  
-# python-selenium
-# python-trio python-trio-websocket
-# python-tz python-tzdata
+# python-selenium (on Arch) or selenium (with pip)
+# python-trio python-trio-websocket (on Arch). Seem to have been installed with selenium on tarragon. 
+# python-tz python-tzdata (on Arch) or tz tzdata (with pip)
 #
 # In addition I have installed at the system level: 
 # argparse
@@ -84,14 +84,30 @@ secs = 0.4        # time to sleep between screens so that we can see the pages c
 
 # midnight delay stuff
 # basically, we usually sleep until just after midnight, and then wake up and try to reserve a court.
-# two factors affect how soon after midnigh we will wake up. 
-# one, called midnight_delay, is a random number generated here between 20 and 240 seconds. 
-# the second, called offset, is a parameter which can be specified to the program at run time, 
-# and if non-zero is added to the delay. The purpose of this is to enable having a pickle run
+#
+# Three factors affect how soon after midnight we will wake up.  
+#
+# The first factor, called midnight_delay_min, is a minimum number of seconds to wait after midnight
+# to let the website settle once the data is changed. 
+#
+# The second factor is a (possible) random number between 0 and 4 minutes, generated here, which may be
+# added to midnight_delay_min. This is optional (set random_wait = True), and was intended to ensure 
+# our reservations appear a little more random, and we don't look so much like a robot. 
+# 
+# A third factor, called offset, is a parameter which can be specified to the program at run time, 
+# and if non-zero is added to the delay. The purpose of this is (was) to enable having a pickle run
 # on tarragon and another on oregano which runs as a "backup" (just in case). 
 # This is probably belt and braces. If something goes wrong one place, it may also go wrong in the other. 
+# Although the "offset" parameter exists, and still works (I think), it isn't being used any more. 
 
-midnight_delay = randrange(20,90)
+midnight_delay_min = 3
+
+random_wait = False
+anti_robot_wait = 0
+if random_wait:
+    anti_robot_wait = randrange(0,240)
+
+midnight_delay = midnight_delay_min + anti_robot_wait
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
 
@@ -834,19 +850,26 @@ month = reservedate.month
 day = reservedate.day
 
 # 
-# About the delay after midnight. 
+# About the delay after midnight, and the offset. 
 #
-# We experienced an odd failure, which I interpret as some kind of reset occurring on the city 
+# This comment is duplicative. I've already written this above. But I never remove documentation unless 
+# it is just wrong. 
+#
+# There are three factors affection how long we wait after midnight. 
+#
+# 1) We experienced an odd failure, which I interpret as some kind of reset occurring on the city 
 # website immediately after midnight. This wouldn't surprise me. At the website end they have  
 # to somehow accommodate a change in the data availability, and this could be accompanied by
-# a reset of the web server, which could reset all the http connections. 
-# So, there is an automatic delay to be sure we don't wake up until at least 20 seconds past midnight,
+# a reset of the web server, which could reset all the http connections. So, there is an automatic 
+# delay to be sure we don't wake up until at least "midnight_delay_min" seconds past midnight,
 # so that whatever shenanigans are going on can settle. 
-# A second factor in picking the delay is a pseudo random number between that 20 seconds and 
+#
+# A second factor in picking the delay is a pseudo random number (the anti-robot-delay) between 0 and 
 # 4 minutes (240 seconds), which is intended to ensure our pickle picking looks like a human being
 # rather than a robot.  
+# 
 # Finally, I have added a parameter "offset" which can be passed into the program at run time 
-# with the -o or --offset flag, which, if non-zero, adds "n" 5 minute (300 second) delays. So if 
+# with the -o or --offset flag, which, if non-zero, adds "n" additional 5 minute (300 second) delays. So if 
 # offset = 1, we add 300 seconds. If offset = 2 we hadd 600 seconds.  
 # The intention is that during the development/debugging stage, when court picking has sometimes been
 # sporadically unreliable, we can have a backup pickle-picker on another machine, with a delay, as 
@@ -859,8 +882,7 @@ if offset:
     offset = offset*300
     midnight_delay += offset
     if debug: 
-        record("Offset will be "+str(offset)+". Midnight delay="+str(midnight_delay)+".")
-    
+        record("Offset will be "+str(offset)+". Midnight delay="+str(midnight_delay)+".")   
 
 sleeptime = (midnight-now).total_seconds()+midnight_delay
 

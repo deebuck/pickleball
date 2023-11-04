@@ -91,7 +91,7 @@ secs = 0.4        # time to sleep between screens so that we can see the pages c
 # on tarragon and another on oregano which runs as a "backup" (just in case). 
 # This is probably belt and braces. If something goes wrong one place, it may also go wrong in the other. 
 
-midnight_delay = randrange(20,240)
+midnight_delay = randrange(20,90)
 
 web_site = "https://web1.myvscloud.com/wbwsc/vafallschurchwt.wsc/splash.html"
 

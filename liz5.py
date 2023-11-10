@@ -273,7 +273,26 @@ preferences = {
     'CvP1': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #1", "type": "Pickleball Courts" },
     'CvP2': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #2", "type": "Pickleball Courts" },
     'CvP3': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #3", "type": "Pickleball Courts" },
-    'CvP4': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #4", "type": "Pickleball Courts" }
+    'CvP4': { "location" : "Cavalier Trail Park",               "facility": "Cavalier Trail Pickleball #4", "type": "Pickleball Courts" },
+    'MeT1': { "location" : "Meridian High School",              "facility": "Meridian High School - Tennis Court #1", "type": "Tennis Courts"},
+    'MeT2': { "location" : "Meridian High School",              "facility": "Meridian High School - Tennis Court #2", "type": "Tennis Courts"},
+    'MeT3': { "location" : "Meridian High School",              "facility": "Meridian High School - Tennis Court #3", "type": "Tennis Courts"},
+    'MeT4': { "location" : "Meridian High School",              "facility": "Meridian High School - Tennis Court #4", "type": "Tennis Courts"},
+    'MeT5': { "location" : "Meridian High School",              "facility": "Meridian High School - Tennis Court #5", "type": "Tennis Courts"},
+    'MeT6': { "location" : "Meridian High School",              "facility": "Meridian High School - Tennis Court #6", "type": "Tennis Courts"},
+    'MeP1A': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 1A", "type": "Pickleball Courts"},
+    'MeP1B': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 1B", "type": "Pickleball Courts"},
+    'MeP2A': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 2A", "type": "Pickleball Courts"},
+    'MeP2B': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 2B", "type": "Pickleball Courts"},
+    'MeP3A': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 3A", "type": "Pickleball Courts"},
+    'MeP3B': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 3B", "type": "Pickleball Courts"},
+    'MeP4A': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 4A", "type": "Pickleball Courts"},
+    'MeP4B': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 4B", "type": "Pickleball Courts"},
+    'MeP5A': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 5A", "type": "Pickleball Courts"},
+    'MeP5B': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 5B", "type": "Pickleball Courts"},
+    'MeP6A': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 6A", "type": "Pickleball Courts"},
+    'MeP6B': { "location" : "Meridian High School",              "facility": "Meridian High School - Pickleball Court 6B", "type": "Pickleball Courts"}
+
 }
 
 # utility functions, to make the code easier to read

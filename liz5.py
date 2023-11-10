@@ -502,10 +502,11 @@ def fetch_tableset(myday, mymonth, myreservation_time):
     # now select the location - click on the location dropdown list icon, then select the location(s)
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/label/span[1]')
 
-    # Click the select boxes for both Cavalier and Cherry. 
+    # Click the select boxes for Cavalier, Cherry, and Meridian. 
     locationdropdown = findelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[3]/div/div/div/ul')
     clickelementbyCSS("li[data-value='NCHER']")
     clickelementbyCSS("li[data-value='CAVAL']")
+    clickelementbyCSS("li[data-value='Meridian']")
     
     # click on Max Available Blocks to Display to show the drop down, then activate the drop-down
     clickelement('/html/body/div/div[1]/div/div/form/div[1]/div[1]/div[1]/div[4]/label/span')

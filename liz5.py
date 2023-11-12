@@ -100,7 +100,7 @@ secs = 0.4        # time to sleep between screens so that we can see the pages c
 # This is probably belt and braces. If something goes wrong one place, it may also go wrong in the other. 
 # Although the "offset" parameter exists, and still works (I think), it isn't being used any more. 
 
-midnight_delay_min = 3
+midnight_delay_min = 30
 
 random_wait = False
 anti_robot_wait = 0
